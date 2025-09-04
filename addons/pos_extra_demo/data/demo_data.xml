@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <function model="pos.config" name="load_pos_extra_demo_data" >
+            <value model="pos.config" eval="obj()"/>
+        </function>
+    </data>
+</odoo>
