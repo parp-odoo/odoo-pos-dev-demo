@@ -21,5 +21,5 @@ This module adds Extra demo data and configurations as mensioned below:
     'installable': True,
     'auto_install': ['point_of_sale'],
     'author': 'Parthkumar Patel (PARP)',
-    'license': 'OPL-3',
+    'license': 'LGPL-3',
 }

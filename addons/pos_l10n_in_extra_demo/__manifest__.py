@@ -22,5 +22,5 @@ This module adds Extra demo data and configurations as mensioned below:
     'installable': True,
     'auto_install': ['l10n_in_pos'],
     'author': 'Parthkumar Patel (PARP)',
-    'license': 'OPL-3',
+    'license': 'LGPL-3',
 }

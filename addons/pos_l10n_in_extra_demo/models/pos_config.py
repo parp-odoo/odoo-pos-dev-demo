@@ -99,22 +99,22 @@ class PosConfig(models.Model):
         furn_config._load_onboarding_furniture_demo_data(True)
         return furn_config
 
-    def _load_prep_display(self, config_ids):
-        return self.env['pos.prep.display'].create({
+    def _load_prep_display(self, config_ids, in_company):
+        return self.env['pos.prep.display'].with_company(in_company).create({
             'name': 'IN Preparation Display',
-            'pos_config_ids': [(4, config_ids)],
+            'pos_config_ids': config_ids,
         })
 
     def load_l10n_in_pos_extra_demo_data(self):
         in_company = self.env.ref('base.demo_company_in')
 
-        configs = []
-        configs += self.with_company(in_company)._load_l10n_in_furn_shop()
-        configs += self.with_company(in_company)._load_l10n_in_resto()
-        configs += self.with_company(in_company)._load_l10n_in_kiosk()
+        configs = self.env['pos.config']
+        configs |= self.with_company(in_company)._load_l10n_in_furn_shop()
+        configs |= self.with_company(in_company)._load_l10n_in_resto()
+        configs |= self.with_company(in_company)._load_l10n_in_kiosk()
 
         pms = self.with_company(in_company)._get_additional_pm()
-        self._load_prep_display(configs[1:].ids)
+        self._load_prep_display(configs[1:].ids, in_company)
         for config in configs:
             if config.name != 'IN Furniture Shop':
                 self.with_company(in_company)._add_prep_printer(config)
