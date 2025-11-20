@@ -22,7 +22,9 @@ class PosConfig(models.Model):
         })
 
     def _add_online_payment_provider(self, config):
-        demo_online_pm = self.env['pos.payment.method'].search([('name', '=', 'Demo Online'), ('company_id', '=', self.env.company.id)])
+        demo_online_pm = self.env['pos.payment.method'].search([('name', 'in', ['Online Payment', 'Demo Online']), ('company_id', '=', self.env.company.id)])
+        if not demo_online_pm:
+            demo_online_pm = self._create_demo_online_pm()
         if demo_online_pm and config:
             config.write({'payment_method_ids': [Command.link(demo_online_pm.id)]})
         return demo_online_pm
@@ -34,7 +36,6 @@ class PosConfig(models.Model):
         })
 
     def load_pos_extra_demo_data(self):
-        self._create_demo_online_pm()
         config_ids = self.get_record_by_ref([
             'point_of_sale.pos_config_main',
             'point_of_sale.pos_config_clothes',

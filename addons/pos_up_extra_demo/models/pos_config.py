@@ -12,6 +12,14 @@ uk_us_up_store_sec_id = os.getenv("UK_US_UP_STORE_SEC_ID")
 class PosConfig(models.Model):
     _inherit = 'pos.config'
 
+    def _set_base_url(self, url):
+        try:
+            self.env['ir.config_parameter'].sudo().set_param('web.base.url', ngrok_url)
+            self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
+        except Exception:
+            self.env['ir.config_parameter'].sudo().set_str('web.base.url', ngrok_url)
+            self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+
     def load_pos_ub_extra_demo_data_sf(self):
         provider_ids = self.get_record_by_ref([
             'pos_urban_piper_ubereats.pos_delivery_provider_ubereats',
@@ -19,9 +27,7 @@ class PosConfig(models.Model):
             'pos_urban_piper.pos_delivery_provider_justeat',
         ])
 
-        self.env['ir.config_parameter'].sudo().set_param('web.base.url', ngrok_url)
-        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
-
+        self._set_base_url(ngrok_url)
         self.load_pos_ub_extra_demo_data_sf_resto(provider_ids[:-1])
         self.load_pos_ub_extra_demo_data_sf_furn_shop(provider_ids)
 
@@ -29,18 +35,17 @@ class PosConfig(models.Model):
         furn_shop = self.env.ref('point_of_sale.pos_config_main')
         sf_compnay = furn_shop.company_id
 
-        sf_compnay.write({
-            "pos_urbanpiper_username": uk_us_up_username,
-            "pos_urbanpiper_apikey": uk_us_up_api_key,
-        })
-
-        if 'pos.urban.piper.store' in self.env:
-            store = self.env['pos.urban.piper.store'].with_company(sf_compnay).create({
+        if 'pos.urbanpiper.store' in self.env:
+            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
                 'config_id': furn_shop.id,
                 'name': 'Mid-Wilshire shop',
-                'store_city': 'San francisco',
+                'city': 'San francisco',
                 'store_identifier': uk_us_up_store_sec_id,
-                'delivery_provider_ids': [Command.set(provider_ids)],
+                'urbanpiper_username': uk_us_up_username,
+                'urbanpiper_apikey': uk_us_up_api_key,
+                'urbanpiper_aggregator_ids': [
+                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
+                ],
                 'urbanpiper_webhook_url': self.env['pos.config'].get_base_url()
             })
             furn_shop.write({
@@ -54,18 +59,26 @@ class PosConfig(models.Model):
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
                 'urbanpiper_webhook_url': self.env['pos.config'].get_base_url()
             })
+            sf_compnay.write({
+                "pos_urbanpiper_username": uk_us_up_username,
+                "pos_urbanpiper_apikey": uk_us_up_api_key,
+            })
 
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
         resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
         sf_compnay = resto.company_id
 
-        if 'pos.urban.piper.store' in self.env:
-            store = self.env['pos.urban.piper.store'].with_company(sf_compnay).create({
+        if 'pos.urbanpiper.store' in self.env:
+            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
                 'config_id': resto.id,
                 'name': 'be resto',
-                'store_city': 'San francisco',
+                'city': 'San francisco',
                 'store_identifier': uk_us_up_store_prim_id,
-                'delivery_provider_ids': [Command.set(provider_ids)],
+                'urbanpiper_username': uk_us_up_username,
+                'urbanpiper_apikey': uk_us_up_api_key,
+                'urbanpiper_aggregator_ids': [
+                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
+                ],
                 'urbanpiper_webhook_url': self.env['pos.config'].get_base_url()
             })
             resto.write({

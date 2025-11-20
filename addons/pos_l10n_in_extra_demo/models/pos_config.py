@@ -66,7 +66,10 @@ class PosConfig(models.Model):
             'self_ordering_mode': 'mobile',
             'self_ordering_pay_after': 'each'
         })
-        resto_config._load_restaurant_demo_data(True)
+        try:
+            resto_config._load_restaurant_demo_data(True)
+        except Exception:
+            resto_config._load_restaurant_demo_data()
         return resto_config
 
     def _load_l10n_in_kiosk(self):
@@ -96,14 +99,19 @@ class PosConfig(models.Model):
             'journal_id': journal.id,
             'payment_method_ids': payment_methods_ids
         }])
-        furn_config._load_onboarding_furniture_demo_data(True)
+        try:
+            furn_config._load_onboarding_furniture_demo_data(True)
+        except Exception:
+            furn_config._load_onboarding_furniture_demo_data()
+
         return furn_config
 
     def _load_prep_display(self, config_ids, in_company):
-        return self.env['pos.prep.display'].with_company(in_company).create({
-            'name': 'IN Preparation Display',
-            'pos_config_ids': config_ids,
-        })
+        if 'pos.prep.display' in self.env:
+            return self.env['pos.prep.display'].with_company(in_company).create({
+                'name': 'IN Preparation Display',
+                'pos_config_ids': config_ids,
+            })
 
     def load_l10n_in_pos_extra_demo_data(self):
         in_company = self.env.ref('base.demo_company_in')

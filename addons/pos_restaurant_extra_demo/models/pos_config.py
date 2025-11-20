@@ -8,28 +8,38 @@ class PosConfig(models.Model):
     def _add_prep_printer(self, config):
         printer = self.env.ref('pos_restaurant_extra_demo.prep_printer_001', raise_if_not_found=False)
         if printer:
-            config.write({
-                'is_order_printer': True,
-                'printer_ids': [Command.link(printer.id)]
-            })
+            if 'use_order_printer' in config:
+                config.write({
+                    'use_order_printer': True,
+                    'printer_ids': [Command.link(printer.id)]
+                })
+            else:
+                config.write({
+                    'is_order_printer': True,
+                    'printer_ids': [Command.link(printer.id)]
+                })
 
     def _load_pos_self_extra_demo(self):
-        kiosk_config = self.search(['name', '=', 'Kiosk'])
+        kiosk_config = self.search([('name', '=', 'Kiosk')])
 
         self._add_receipt_printer(kiosk_config)
         self._add_prep_printer(kiosk_config)
 
-        presets = self.get_record_by_ref([
-            'pos_restaurant.pos_takein_preset',
-            'pos_restaurant.pos_takeout_preset',
-            'pos_restaurant.pos_delivery_preset',
-        ])
-        if len(presets):
-            kiosk_config.write({
-                'use_presets': bool(presets),
-                'default_preset_id': presets[0] if presets else False,
-                'available_preset_ids': [(6, 0, presets)],
-            })
+        # presets = self.get_record_by_ref([
+        #     'pos_restaurant.pos_takein_preset',
+        #     'pos_restaurant.pos_takeout_preset',
+        #     'pos_restaurant.pos_delivery_preset',
+        # ])
+        # if len(presets):
+        #     kiosk_config.write({
+        #         'use_presets': bool(presets),
+        #         'default_preset_id': presets[0] if presets else False,
+        #         'available_preset_ids': [(6, 0, presets)],
+        #     })
+        if 'pos.prep.display' in self.env:
+            prep_display = self.env['pos.prep.display'].search([])
+            if prep_display:
+                prep_display.pos_config_ids |= kiosk_config
 
     def load_pos_restaurant_extra_demo_data(self):
         config_ids = self.get_record_by_ref([
@@ -59,7 +69,9 @@ class PosConfig(models.Model):
             # 'self_order_online_payment_method_id': demo_on_pm.id
         })
 
-        prep_display = self.env['pos.prep.display'].search([])
-        if prep_display:
-            prep_display.pos_config_ids = configs
-            prep_display.category_ids = []
+        if 'pos.prep.display' in self.env:
+            prep_display = self.env['pos.prep.display'].search([])
+            if prep_display:
+                prep_display.pos_config_ids = configs
+                prep_display.category_ids = []
+        self._load_pos_self_extra_demo()

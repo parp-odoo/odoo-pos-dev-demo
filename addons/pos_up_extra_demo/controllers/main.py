@@ -66,20 +66,6 @@ store_action_schema = object_of({
 class PosUrbanPiperDemoExtra(PosUrbanPiperController):
     def webhook(self, event_type):
         data = request.get_json_data()
-        # request data for order_placed and rider_status_update are already stsoored in the database
-        if event_type not in ['order_placed', 'rider_status_update']:
-            if 'pos.urban.piper.store' in request.env:
-                request.env['pos.urban.piper.store'].log_xml(
-                    "UrbanPiper Webhook Received: %s" % json.dumps(data),
-                    'urbanpiper_webhook_%s' % event_type,
-                    'Urbanpiper Webhook - %s' % event_type
-                )
-            else:
-                request.env['pos.config'].log_xml(
-                    "UrbanPiper Webhook Received: %s" % json.dumps(data),
-                    'urbanpiper_webhook_%s' % event_type,
-                    'Urbanpiper Webhook - %s' % event_type
-                )
         if event_type == 'order_placed':
             self._handle_data(data, order_data_schema, self._create_order, event_type)
         elif event_type == 'order_status_update':

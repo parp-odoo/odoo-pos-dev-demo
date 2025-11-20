@@ -13,27 +13,23 @@ class PosConfig(models.Model):
 
     def load_pos_ub_extra_demo_data(self):
         in_company = self.env.ref('base.demo_company_in')
-        config = self.env["pos.config"].with_company(in_company).search([('name', '=', 'IN Furniture Shop')])
+        config = self.env["pos.config"].with_company(in_company).search([('name', '=', 'IN Restaurant')])
         provider_ids = self.get_record_by_ref([
             'l10n_in_pos_urban_piper.pos_delivery_provider_zomato',
             'l10n_in_pos_urban_piper.pos_delivery_provider_swiggy',
         ])
-
-        self.env['ir.config_parameter'].sudo().set_param('web.base.url', ngrok_url)
-        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
-
-        in_company.write({
-            "pos_urbanpiper_username": uk_us_up_username,
-            "pos_urbanpiper_apikey": uk_us_up_api_key,
-        })
-
-        if 'pos.urban.piper.store' in self.env:
-            store = self.env['pos.urban.piper.store'].with_company(in_company).create({
+        self._set_base_url(ngrok_url)
+        if 'pos.urbanpiper.store' in self.env:
+            store = self.env['pos.urbanpiper.store'].with_company(in_company).create({
                 'config_id': config.id,
                 'name': 'Test-P Ahmedabad',
-                'store_city': 'Ahmedabad',
+                'city': 'Ahmedabad',
                 'store_identifier': in_up_store_prim_id,
-                'delivery_provider_ids': [Command.set(provider_ids)],
+                'urbanpiper_username': uk_us_up_username,
+                'urbanpiper_apikey': uk_us_up_api_key,
+                'urbanpiper_aggregator_ids': [
+                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
+                ],
                 'urbanpiper_webhook_url': self.env['pos.config'].get_base_url()
             })
             config.write({
@@ -46,4 +42,8 @@ class PosConfig(models.Model):
                 "urbanpiper_store_identifier": in_up_store_prim_id,
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
                 'urbanpiper_webhook_url': self.env['pos.config'].get_base_url()
+            })
+            in_company.write({
+                "pos_urbanpiper_username": uk_us_up_username,
+                "pos_urbanpiper_apikey": uk_us_up_api_key,
             })
