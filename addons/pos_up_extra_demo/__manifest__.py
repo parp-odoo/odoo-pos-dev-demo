@@ -18,6 +18,9 @@ This module adds Extra demo data and configurations as mensioned below:
         'data/demo_data.xml',
     ],
     'assets': {
+        'point_of_sale._assets_pos': [
+            'pos_up_extra_demo/static/src/**/*',
+        ],
     },
     'installable': True,
     'auto_install': True,

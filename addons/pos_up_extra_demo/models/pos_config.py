@@ -1,5 +1,6 @@
 import os
-from odoo import models, Command
+import uuid
+from odoo import api, models, Command
 
 ngrok_url = os.getenv("NGROK_URL")
 uk_us_up_username = os.getenv("UK_US_UP_USERNAME")
@@ -92,3 +93,19 @@ class PosConfig(models.Model):
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
                 'urbanpiper_webhook_url': self.env['pos.config'].get_base_url()
             })
+
+    @api.model
+    def action_quick_urbanpiper_test_order(self, store_id, product_id, provider_id):
+        UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard']
+        if 'pos.urbanpiper.store' in self.env:
+            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(store_id=store_id)
+        else:
+            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(config_id=store_id)
+
+        identifier = str(uuid.uuid4())
+        UrbanPiperTestOrder.create({
+            'product_id': product_id,
+            'quantity': 7,
+            'delivery_provider_id': provider_id,
+            'delivery_instruction': 'Always have Fun 😄',
+        }).make_test_order(identifier)
