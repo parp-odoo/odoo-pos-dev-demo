@@ -11,7 +11,7 @@ This module adds Extra demo data and configurations as mensioned below:
 - add ngrok url in system parameter and diable urban piper production mode.
 - Fillup credentials for urban piper settings
 """,
-    'depends': ['pos_restaurant_urban_piper', 'pos_urban_piper_ubereats'],
+    'depends': ['pos_restaurant_urban_piper'],
     'data': [
     ],
     'demo': [
@@ -19,7 +19,7 @@ This module adds Extra demo data and configurations as mensioned below:
     ],
     'assets': {
         'point_of_sale._assets_pos': [
-            'pos_up_extra_demo/static/src/**/*',
+            # 'pos_up_extra_demo/static/src/**/*',
         ],
     },
     'installable': True,

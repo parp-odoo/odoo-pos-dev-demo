@@ -54,15 +54,6 @@ class PosConfig(models.Model):
 
         resto = configs[0]
 
-        # cancel draft orders
-        draft_orders = self.env['pos.order'].search([('state', '=', 'draft')])
-        draft_orders.write({'state': 'cancel'})
-
-        # close restaurant session
-        existing_session = self.env.ref('pos_restaurant.pos_open_session_2', raise_if_not_found=False)
-        existing_session.action_pos_session_closing_control()
-
-        demo_on_pm = self._add_online_payment_provider(resto)
         resto.write({
             'self_ordering_mode': 'mobile',
             'self_ordering_pay_after': 'each',

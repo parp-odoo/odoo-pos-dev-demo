@@ -5,18 +5,24 @@ import { _t } from "@web/core/l10n/translation";
 patch(DebugWidget.prototype, {
     placeUrbanPiperTestOrder() {
         super.placeUrbanPiperTestOrder?.();
-        this.toggleWidget?.();
+        if (this.state.isOpen) {
+            this.toggleWidget?.();
+        }
     },
     placeUrbanPiperQuickTestOrder() {
+        const providrs = this.pos.deliveryProviders || this.pos.config.urbanpiper_delivery_provider_ids;
+        const products = this.pos.productsToDisplay;
         this.pos.data.call(
             "pos.config",
             "action_quick_urbanpiper_test_order",
             [
                 this.pos.store?.id || this.pos.config.id,
-                this.pos.productsToDisplay[0].id,
-                this.pos.deliveryProviders?.[0].id || this.pos.config.urbanpiper_delivery_provider_ids?.[0].id,
+                products[Math.floor(Math.random() * products.length)].id,
+                providrs[Math.floor(Math.random() * providrs.length)].id,
             ]
         );
-        this.toggleWidget?.()
+        if (this.state.isOpen) {
+            this.toggleWidget?.();
+        }
     },
 });
