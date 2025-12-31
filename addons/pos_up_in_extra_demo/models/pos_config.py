@@ -40,6 +40,7 @@ class PosConfig(models.Model):
                 "module_pos_urban_piper": True,
                 "urbanpiper_store_identifier": in_up_store_prim_id,
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
+                'is_urbanpiper_webhook_register': True,
             })
             in_company.write({
                 "pos_urbanpiper_username": uk_us_up_username,

@@ -7,17 +7,23 @@ class PosConfig(models.Model):
 
     def _add_prep_printer(self, config):
         printer = self.env.ref('pos_restaurant_extra_demo.prep_printer_001', raise_if_not_found=False)
-        if printer:
-            if 'use_order_printer' in config:
-                config.write({
-                    'use_order_printer': True,
-                    'printer_ids': [Command.link(printer.id)]
-                })
-            else:
-                config.write({
-                    'is_order_printer': True,
-                    'printer_ids': [Command.link(printer.id)]
-                })
+        if not printer:
+            return
+        if 'is_order_printer' in config:
+            config.write({
+                'is_order_printer': True,
+                'printer_ids': [Command.link(printer.id)]
+            })
+        elif 'printer_ids' in config:
+            config.write({
+                'use_order_printer': True,
+                'printer_ids': [Command.link(printer.id)]
+            })
+        else:
+            config.write({
+                'use_order_printer': True,
+                'preparation_printer_ids': [Command.link(printer.id)]
+            })
 
     def _load_pos_self_extra_demo(self):
         kiosk_config = self.search([('name', '=', 'Kiosk')])

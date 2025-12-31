@@ -59,6 +59,7 @@ class PosConfig(models.Model):
                 "module_pos_urban_piper": True,
                 "urbanpiper_store_identifier": uk_us_up_store_sec_id,
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
+                'is_urbanpiper_webhook_register': True,
             })
             sf_compnay.write({
                 "pos_urbanpiper_username": uk_us_up_username,
@@ -90,6 +91,7 @@ class PosConfig(models.Model):
                 "module_pos_urban_piper": True,
                 "urbanpiper_store_identifier": uk_us_up_store_prim_id,
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
+                'is_urbanpiper_webhook_register': True,
             })
 
     @api.model

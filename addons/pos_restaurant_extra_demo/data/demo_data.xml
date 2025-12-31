@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="prep_printer_001" model="pos.printer">
-        <field name="name">Test-P</field>
-        <field name="printer_type">epson_epos</field>
-        <field name="epson_printer_ip">pos.stva.ovh/test-p</field>
-        <field name="product_categories_ids" eval="[
-            (6, 0, [
-                ref('pos_restaurant.food'),
-                ref('pos_restaurant.drinks'),
-                ref('pos_restaurant.pos_category_cocktails'),
-                ref('pos_restaurant.pos_category_soft_drinks')
-            ])
-        ]"/>
-    </record>
-
     <data noupdate="1">
+        <record id="prep_printer_001" model="pos.printer">
+            <field name="name">Test-P Prepration</field>
+            <field name="printer_type">epson_epos</field>
+            <field name="use_type">preparation</field>
+            <field name="epson_printer_ip">pos.stva.ovh/test-p</field>
+            <field name="product_categories_ids" eval="[
+                (6, 0, [
+                    ref('pos_restaurant.food'),
+                    ref('pos_restaurant.drinks'),
+                    ref('pos_restaurant.pos_category_cocktails'),
+                    ref('pos_restaurant.pos_category_soft_drinks')
+                ])
+            ]"/>
+        </record>
         <function model="pos.config" name="load_pos_restaurant_extra_demo_data">
             <value model="pos.config" eval="obj()"/>
         </function>
