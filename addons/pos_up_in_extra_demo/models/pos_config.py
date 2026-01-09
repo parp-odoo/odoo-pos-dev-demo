@@ -15,8 +15,8 @@ class PosConfig(models.Model):
         in_company = self.env.ref('base.demo_company_in')
         config = self.env["pos.config"].with_company(in_company).search([('name', '=', 'IN Restaurant')])
         provider_ids = self.get_record_by_ref([
-            'pos_urban_piper.pos_delivery_provider_zomato',
-            'pos_urban_piper.pos_delivery_provider_swiggy',
+            'pos_urban_piper_zomato.pos_delivery_provider_zomato',
+            'pos_urban_piper_swiggy.pos_delivery_provider_swiggy',
         ])
         self._set_base_url(ngrok_url)
         config.write({
@@ -24,7 +24,5 @@ class PosConfig(models.Model):
             "urbanpiper_store_identifier": in_up_store_prim_id,
             'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
         })
-        in_company.write({
-            "pos_urbanpiper_username": uk_us_up_username,
-            "pos_urbanpiper_apikey": uk_us_up_api_key,
-        })
+        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.urbanpiper_username', uk_us_up_username)
+        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.urbanpiper_apikey', uk_us_up_api_key)

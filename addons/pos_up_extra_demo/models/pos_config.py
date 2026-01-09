@@ -1,8 +1,12 @@
 import os
 import uuid
 import random
+import json
 
 from odoo import api, models, Command
+from odoo.addons.pos_urban_piper import const
+
+from odoo.addons.pos_urban_piper.models.pos_urban_piper_request import UrbanPiperClient
 
 ngrok_url = os.getenv("NGROK_URL")
 uk_us_up_username = os.getenv("UK_US_UP_USERNAME")
@@ -32,17 +36,13 @@ class PosConfig(models.Model):
 
     def load_pos_ub_extra_demo_data_sf_furn_shop(self, provider_ids):
         furn_shop = self.env.ref('point_of_sale.pos_config_main')
-        sf_compnay = furn_shop.company_id
-
         furn_shop.write({
             "module_pos_urban_piper": True,
             "urbanpiper_store_identifier": uk_us_up_store_sec_id,
             'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
         })
-        sf_compnay.write({
-            "pos_urbanpiper_username": uk_us_up_username,
-            "pos_urbanpiper_apikey": uk_us_up_api_key,
-        })
+        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.urbanpiper_username', uk_us_up_username)
+        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.urbanpiper_apikey', uk_us_up_api_key)
 
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
         resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
@@ -66,7 +66,7 @@ class PosConfig(models.Model):
             "Ring the bell like you found a production bug at 5 PM. 🔔",
             "Leave at the door. I'm in a meeting explaining why tests matter. 📉",
         ]
-        UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard']
+        UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard'].sudo()
         if 'pos.urbanpiper.store' in self.env:
             UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(store_id=store_id)
         else:
@@ -79,3 +79,37 @@ class PosConfig(models.Model):
             'delivery_provider_id': provider_id,
             'delivery_instruction': random.choice(order_notes),
         }).make_test_order(identifier)
+
+    def is_urbanpiper_test_order(self, order):
+        """Return True if the order is marked as an UrbanPiper test order."""
+        if not order.delivery_json:
+            return False
+        delivery_data = json.loads(order.delivery_json)
+        return bool(delivery_data.get('order', {}).get('urban_piper_test'))
+
+    def order_status_update(self, order_id, new_status, code=None):
+        """
+        Update order status from urban piper webhook
+        """
+        self.ensure_one()
+        order = self.env['pos.order'].browse(order_id)
+        if new_status == 'Food Ready' and order.state != 'paid':
+            self._make_order_payment(order)
+        up = UrbanPiperClient(self)
+        is_success, message = False, ''
+        urban_piper_test = self.is_urbanpiper_test_order(order)
+        if urban_piper_test or (order.delivery_provider_id.technical_name == 'careem' and new_status == 'Food Ready'):
+            is_success = True
+        else:
+            is_success, message = up.request_status_update(order.delivery_identifier, new_status, code)
+        if is_success:
+            order.write({
+                'delivery_status': const.ORDER_STATUS_MAPPING[new_status][1],
+            })
+        if not urban_piper_test and new_status == 'Acknowledged':
+            up.urbanpiper_order_reference_update(order)
+        if new_status == 'Cancelled':
+            # Prevent loading cancelled orders in `getServerOrders` triggered by `_send_delivery_order_count`
+            order.state = 'cancel'
+        self._send_delivery_order_count(order_id)
+        return {'is_success': is_success, 'message': message}

@@ -20,7 +20,7 @@ This module adds Extra demo data and configurations as mensioned below:
     ],
     'assets': {
         'point_of_sale._assets_pos': [
-            # 'pos_up_extra_demo/static/src/**/*',
+            'pos_up_extra_demo/static/src/**/*',
         ],
     },
     'installable': True,

@@ -1,8 +1,13 @@
 import { DebugWidget } from "@point_of_sale/app/debug/debug_widget";
+import { usePos } from "@point_of_sale/app/store/pos_hook";
 import { patch } from "@web/core/utils/patch";
 import { _t } from "@web/core/l10n/translation";
 
 patch(DebugWidget.prototype, {
+    setup() {
+        super.setup();
+        this.pos = usePos();
+    },
     showUrbanPiperTestOrderBtn() {
         return Boolean(this.pos.config.urbanpiper_delivery_provider_ids.length);
     },
