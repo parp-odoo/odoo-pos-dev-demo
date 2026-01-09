@@ -11,8 +11,9 @@ This module adds Extra demo data and configurations as mensioned below:
 - add ngrok url in system parameter and diable urban piper production mode.
 - Fillup credentials for urban piper settings
 """,
-    'depends': ['pos_restaurant_urban_piper'],
+    'depends': ['pos_restaurant_urban_piper', 'pos_urban_piper_ubereats'],
     'data': [
+        'wizard/pos_urban_piper_test_order.xml',
     ],
     'demo': [
         'data/demo_data.xml',

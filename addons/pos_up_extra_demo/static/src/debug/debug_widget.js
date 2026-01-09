@@ -1,17 +1,14 @@
-import { DebugWidget } from "@point_of_sale/app/utils/debug/debug_widget";
+import { DebugWidget } from "@point_of_sale/app/debug/debug_widget";
 import { patch } from "@web/core/utils/patch";
 import { _t } from "@web/core/l10n/translation";
 
 patch(DebugWidget.prototype, {
-    placeUrbanPiperTestOrder() {
-        super.placeUrbanPiperTestOrder?.();
-        if (this.state.isOpen) {
-            this.toggleWidget?.();
-        }
+    showUrbanPiperTestOrderBtn() {
+        return Boolean(this.pos.config.urbanpiper_delivery_provider_ids.length);
     },
     placeUrbanPiperQuickTestOrder() {
-        const providrs = this.pos.deliveryProviders || this.pos.config.urbanpiper_delivery_provider_ids;
-        const products = this.pos.productsToDisplay;
+        const providrs = this.pos.config.urbanpiper_delivery_provider_ids;
+        const products = this.pos.models["product.product"].getAll();;
         this.pos.data.call(
             "pos.config",
             "action_quick_urbanpiper_test_order",
@@ -21,8 +18,6 @@ patch(DebugWidget.prototype, {
                 providrs[Math.floor(Math.random() * providrs.length)].id,
             ]
         );
-        if (this.state.isOpen) {
-            this.toggleWidget?.();
-        }
+        this.toggleWidget();
     },
 });

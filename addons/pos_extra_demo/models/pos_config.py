@@ -30,19 +30,10 @@ class PosConfig(models.Model):
         return demo_online_pm
 
     def _add_receipt_printer(self, config):
-        if 'epson_printer_ip' in config:
-            config.write({
-                'other_devices': True,
-                'epson_printer_ip': 'pos.stva.ovh/test-p'
-            })
-        else:
-            printer = self.env.ref('pos_extra_demo.receipt_printer_001', raise_if_not_found=False)
-            config.write({
-                'other_devices': True,
-                'preparation_devices': True,
-                'receipt_printer_ids': [Command.link(printer.id)],
-                'default_receipt_printer_id': printer.id,
-            })
+        config.write({
+            'other_devices': True,
+            'epson_printer_ip': 'pos.stva.ovh/test-p'
+        })
 
     def load_pos_extra_demo_data(self):
         config_ids = self.get_record_by_ref([
@@ -55,13 +46,3 @@ class PosConfig(models.Model):
         for config in configs:
             self._add_receipt_printer(config)
             self._add_online_payment_provider(config)
-
-        try:
-            # add fast validation in furn. Shop
-            furn_shop = configs[0]
-            furn_shop.use_fast_payment = True
-            furn_shop.fast_payment_method_ids = furn_shop.payment_method_ids.filtered(
-                lambda pm: pm.name in ["Cash", "Card"]
-            )
-        except Exception as e:
-            _logger.error("Failed to enable fast payment in furn. shop: %s", e)

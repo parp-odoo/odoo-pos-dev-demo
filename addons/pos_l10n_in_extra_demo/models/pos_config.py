@@ -48,28 +48,22 @@ class PosConfig(models.Model):
 
     def _load_l10n_in_resto(self):
         journal, payment_methods_ids = self._create_journal_and_payment_methods(cash_journal_vals={'name': 'Cash IN Restaurant', 'show_on_dashboard': False})
-        presets = self.get_record_by_ref([
-            'pos_restaurant.pos_takein_preset',
-            'pos_restaurant.pos_takeout_preset',
-            'pos_restaurant.pos_delivery_preset',
-        ]) + self.env['pos.preset'].search([]).ids
+        restaurant_categories = self.get_categories([
+            'pos_restaurant.food',
+            'pos_restaurant.drinks',
+        ])
         resto_config = self.env['pos.config'].create({
             'name': 'IN Restaurant',
             'company_id': self.env.company.id,
             'journal_id': journal.id,
             'payment_method_ids': payment_methods_ids,
+            'limit_categories': True,
+            'iface_available_categ_ids': restaurant_categories,
             'iface_splitbill': True,
             'module_pos_restaurant': True,
-            'use_presets': bool(presets),
-            'default_preset_id': presets[0] if presets else False,
-            'available_preset_ids': [(6, 0, presets)],
             'self_ordering_mode': 'mobile',
             'self_ordering_pay_after': 'each'
         })
-        try:
-            resto_config._load_restaurant_demo_data(True)
-        except Exception:
-            resto_config._load_restaurant_demo_data()
         return resto_config
 
     def _load_l10n_in_kiosk(self):
@@ -93,25 +87,26 @@ class PosConfig(models.Model):
 
     def _load_l10n_in_furn_shop(self):
         journal, payment_methods_ids = self._create_journal_and_payment_methods(cash_journal_vals={'name': 'Cash IN Furn. Shop', 'show_on_dashboard': False})
+        furniture_categories = self.get_categories([
+            'point_of_sale.pos_category_miscellaneous',
+            'point_of_sale.pos_category_desks',
+            'point_of_sale.pos_category_chairs'
+        ])
         furn_config = self.env['pos.config'].create([{
             'name': 'IN Furniture Shop',
             'company_id': self.env.company.id,
             'journal_id': journal.id,
-            'payment_method_ids': payment_methods_ids
+            'payment_method_ids': payment_methods_ids,
+            'limit_categories': True,
+            'iface_available_categ_ids': furniture_categories,
         }])
-        try:
-            furn_config._load_onboarding_furniture_demo_data(True)
-        except Exception:
-            furn_config._load_onboarding_furniture_demo_data()
-
         return furn_config
 
     def _load_prep_display(self, config_ids, in_company):
-        if 'pos.prep.display' in self.env:
-            return self.env['pos.prep.display'].with_company(in_company).create({
-                'name': 'IN Preparation Display',
-                'pos_config_ids': config_ids,
-            })
+        return self.env['pos_preparation_display.display'].with_company(in_company).create({
+            'name': 'IN Preparation Display',
+            'pos_config_ids': config_ids,
+        })
 
     def load_l10n_in_pos_extra_demo_data(self):
         in_company = self.env.ref('base.demo_company_in')

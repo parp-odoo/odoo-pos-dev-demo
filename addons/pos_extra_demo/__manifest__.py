@@ -9,13 +9,9 @@
 This module adds Extra demo data and configurations as mensioned below:
 - create demo printer (add them to all the config for receipt preinting)
 - Create demo-online Payment (add it to all the config)
-- Enable fast Pay in furniture Shop
 
 """,
-    'depends': ['point_of_sale', 'pos_online_payment', 'payment_demo'],
-    'data': [
-        'views/pos_assets_index.xml',
-    ],
+    'depends': ['point_of_sale', 'pos_online_payment', 'payment_demo', 'pos_epson_printer'],
     'demo': [
         'data/demo_data.xml',
     ],

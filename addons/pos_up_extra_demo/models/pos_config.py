@@ -16,16 +16,12 @@ class PosConfig(models.Model):
     _inherit = 'pos.config'
 
     def _set_base_url(self, url):
-        try:
-            self.env['ir.config_parameter'].sudo().set_param('web.base.url', url)
-            self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
-        except Exception:
-            self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
-            self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+        self.env['ir.config_parameter'].sudo().set_param('web.base.url', url)
+        self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
 
     def load_pos_ub_extra_demo_data_sf(self):
         provider_ids = self.get_record_by_ref([
-            'pos_urban_piper.pos_delivery_provider_ubereats',
+            'pos_urban_piper_ubereats.pos_delivery_provider_ubereats',
             'pos_urban_piper.pos_delivery_provider_doordash',
             'pos_urban_piper.pos_delivery_provider_justeat',
         ])
@@ -38,59 +34,24 @@ class PosConfig(models.Model):
         furn_shop = self.env.ref('point_of_sale.pos_config_main')
         sf_compnay = furn_shop.company_id
 
-        if 'pos.urbanpiper.store' in self.env:
-            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
-                'config_id': furn_shop.id,
-                'name': 'Mid-Wilshire shop',
-                'city': 'San francisco',
-                'store_identifier': uk_us_up_store_sec_id,
-                'urbanpiper_username': uk_us_up_username,
-                'urbanpiper_apikey': uk_us_up_api_key,
-                'urbanpiper_aggregator_ids': [
-                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
-                ],
-            })
-            furn_shop.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_id": store.id,
-            })
-        else:
-            furn_shop.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_identifier": uk_us_up_store_sec_id,
-                'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
-            })
-            sf_compnay.write({
-                "pos_urbanpiper_username": uk_us_up_username,
-                "pos_urbanpiper_apikey": uk_us_up_api_key,
-            })
+        furn_shop.write({
+            "module_pos_urban_piper": True,
+            "urbanpiper_store_identifier": uk_us_up_store_sec_id,
+            'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
+        })
+        sf_compnay.write({
+            "pos_urbanpiper_username": uk_us_up_username,
+            "pos_urbanpiper_apikey": uk_us_up_api_key,
+        })
 
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
         resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
-        sf_compnay = resto.company_id
 
-        if 'pos.urbanpiper.store' in self.env:
-            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
-                'config_id': resto.id,
-                'name': 'be resto',
-                'city': 'San francisco',
-                'store_identifier': uk_us_up_store_prim_id,
-                'urbanpiper_username': uk_us_up_username,
-                'urbanpiper_apikey': uk_us_up_api_key,
-                'urbanpiper_aggregator_ids': [
-                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
-                ],
-            })
-            resto.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_id": store.id,
-            })
-        else:
-            resto.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_identifier": uk_us_up_store_prim_id,
-                'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
-            })
+        resto.write({
+            "module_pos_urban_piper": True,
+            "urbanpiper_store_identifier": uk_us_up_store_prim_id,
+            'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
+        })
 
     @api.model
     def action_quick_urbanpiper_test_order(self, store_id, product_id, provider_id):
@@ -107,9 +68,9 @@ class PosConfig(models.Model):
         ]
         UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard']
         if 'pos.urbanpiper.store' in self.env:
-            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(store_id=store_id)
+            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(store_id=store_id)
         else:
-            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(config_id=store_id)
+            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(config_id=store_id)
 
         identifier = str(uuid.uuid4())
         UrbanPiperTestOrder.create({
