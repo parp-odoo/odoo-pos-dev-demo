@@ -1,22 +1,45 @@
 import { DebugWidget } from "@point_of_sale/app/utils/debug/debug_widget";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
 import { patch } from "@web/core/utils/patch";
 import { _t } from "@web/core/l10n/translation";
 
 patch(DebugWidget.prototype, {
-    placeUrbanPiperTestOrder() {
-        super.placeUrbanPiperTestOrder?.();
-        this.toggleWidget?.();
+    setup() {
+        super.setup();
+        this.pos = usePos();
+    },
+    showUrbanPiperTestOrderBtn() {
+        return Boolean(this.pos.config.urbanpiper_delivery_provider_ids.length);
     },
     placeUrbanPiperQuickTestOrder() {
+        const providrs = this.pos.config.urbanpiper_delivery_provider_ids;
+        const products = this.pos.models["product.product"].getAll();;
         this.pos.data.call(
             "pos.config",
             "action_quick_urbanpiper_test_order",
             [
                 this.pos.store?.id || this.pos.config.id,
-                this.pos.productsToDisplay[0].id,
-                this.pos.deliveryProviders?.[0].id || this.pos.config.urbanpiper_delivery_provider_ids?.[0].id,
+                products[Math.floor(Math.random() * products.length)].id,
+                providrs[Math.floor(Math.random() * providrs.length)].id,
             ]
         );
-        this.toggleWidget?.()
+        this.toggleWidget();
     },
+    async placeTestOrder() {
+        this.pos.action.doAction({
+            name: _t("Test Food Delivery Order"),
+            type: "ir.actions.act_window",
+            res_model: "pos.urbanpiper.test.order.wizard",
+            views: [[false, "form"]],
+            target: "new",
+            context: {
+                config_id: this.pos.config.id,
+                dialog_size: "medium",
+                delivery_provider_ids: this.pos.config.urbanpiper_delivery_provider_ids.map(
+                    (provider) => provider.id
+                ),
+            },
+        });
+        this.toggleWidget();
+    }
 });

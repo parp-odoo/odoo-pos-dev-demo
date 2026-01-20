@@ -46,13 +46,3 @@ class PosConfig(models.Model):
         for config in configs:
             self._add_receipt_printer(config)
             self._add_online_payment_provider(config)
-
-        try:
-            # add fast validation in furn. Shop
-            furn_shop = configs[0]
-            furn_shop.use_fast_payment = True
-            furn_shop.fast_payment_method_ids = furn_shop.payment_method_ids.filtered(
-                lambda pm: pm.name in ["Cash", "Card"]
-            )
-        except Exception as e:
-            _logger.error("Failed to enable fast payment in furn. shop: %s", e)
