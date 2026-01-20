@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data noupdate="1">
+        <record id="receipt_printer_001" model="pos.printer">
+            <field name="name">Test-P Receipt</field>
+            <field name="printer_type">epson_epos</field>
+            <field name="use_type">receipt</field>
+            <field name="epson_printer_ip">pos.stva.ovh/test-p</field>
+        </record>
+
         <function model="pos.config" name="load_pos_extra_demo_data" >
             <value model="pos.config" eval="obj()"/>
         </function>

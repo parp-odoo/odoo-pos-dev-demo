@@ -30,9 +30,12 @@ class PosConfig(models.Model):
         return demo_online_pm
 
     def _add_receipt_printer(self, config):
+        printer = self.env.ref('pos_extra_demo.receipt_printer_001', raise_if_not_found=False)
         config.write({
             'other_devices': True,
-            'epson_printer_ip': 'pos.stva.ovh/test-p'
+            'preparation_devices': True,
+            'receipt_printer_ids': [Command.link(printer.id)],
+            'default_receipt_printer_id': printer.id,
         })
 
     def load_pos_extra_demo_data(self):
