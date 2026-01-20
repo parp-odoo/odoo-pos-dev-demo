@@ -25,17 +25,6 @@ class PosConfig(models.Model):
         self._add_receipt_printer(kiosk_config)
         self._add_prep_printer(kiosk_config)
 
-        # presets = self.get_record_by_ref([
-        #     'pos_restaurant.pos_takein_preset',
-        #     'pos_restaurant.pos_takeout_preset',
-        #     'pos_restaurant.pos_delivery_preset',
-        # ])
-        # if len(presets):
-        #     kiosk_config.write({
-        #         'use_presets': bool(presets),
-        #         'default_preset_id': presets[0] if presets else False,
-        #         'available_preset_ids': [(6, 0, presets)],
-        #     })
         if 'pos.prep.display' in self.env:
             prep_display = self.env['pos.prep.display'].search([])
             if prep_display:
@@ -62,11 +51,10 @@ class PosConfig(models.Model):
         existing_session = self.env.ref('pos_restaurant.pos_open_session_2', raise_if_not_found=False)
         existing_session.action_pos_session_closing_control()
 
-        demo_on_pm = self._add_online_payment_provider(resto)
+        self._add_online_payment_provider(resto)
         resto.write({
             'self_ordering_mode': 'mobile',
             'self_ordering_pay_after': 'each',
-            # 'self_order_online_payment_method_id': demo_on_pm.id
         })
 
         if 'pos.prep.display' in self.env:

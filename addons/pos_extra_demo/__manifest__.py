@@ -1,6 +1,6 @@
 
 {
-    'name': 'Point of Sale Exta Demo',
+    'name': 'Point of Sale Extra Demo',
     'category': 'Sales/Point of Sale',
     'sequence': 6,
     'summary': 'Helper module for pos developer to save time for configurations',

@@ -66,10 +66,7 @@ class PosConfig(models.Model):
             'self_ordering_mode': 'mobile',
             'self_ordering_pay_after': 'each'
         })
-        try:
-            resto_config._load_restaurant_demo_data(True)
-        except Exception:
-            resto_config._load_restaurant_demo_data()
+        resto_config._load_restaurant_demo_data()
         return resto_config
 
     def _load_l10n_in_kiosk(self):
@@ -99,10 +96,7 @@ class PosConfig(models.Model):
             'journal_id': journal.id,
             'payment_method_ids': payment_methods_ids
         }])
-        try:
-            furn_config._load_onboarding_furniture_demo_data(True)
-        except Exception:
-            furn_config._load_onboarding_furniture_demo_data()
+        furn_config._load_onboarding_furniture_demo_data()
 
         return furn_config
 

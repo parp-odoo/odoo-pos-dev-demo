@@ -5,7 +5,7 @@ from odoo.http import request
 from odoo.tools.json import scriptsafe as json
 
 from odoo.addons.pos_urban_piper.controllers.main import PosUrbanPiperController
-from ...pos_enterprise.models.data_validator import object_of, list_of
+from odoo.addons.pos_enterprise.models.data_validator import object_of, list_of
 
 order_data_schema = object_of({
     'order': object_of({

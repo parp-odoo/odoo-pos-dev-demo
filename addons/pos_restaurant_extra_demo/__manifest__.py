@@ -1,6 +1,6 @@
 
 {
-    'name': 'Restaurant Exta Demo',
+    'name': 'Restaurant Extra Demo',
     'category': 'Sales/Point of Sale',
     'sequence': 6,
     'summary': 'Helper module for pos developer to save time for configurations',
