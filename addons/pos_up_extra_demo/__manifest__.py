@@ -1,6 +1,6 @@
 
 {
-    'name': 'POS Urban Piper Exta Demo',
+    'name': 'POS Urban Piper Extra Demo',
     'category': 'Sales/Point of Sale',
     'sequence': 69,
     'summary': 'Helper module for pos developer to save time for configurations',
