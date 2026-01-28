@@ -1,6 +1,6 @@
 
 {
-    'name': 'POS Urban Piper Exta Demo',
+    'name': 'POS Urban Piper Extra Demo',
     'category': 'Sales/Point of Sale',
     'sequence': 69,
     'summary': 'Helper module for pos developer to save time for configurations',
@@ -19,7 +19,7 @@ This module adds Extra demo data and configurations as mensioned below:
     ],
     'assets': {
         'point_of_sale._assets_pos': [
-            # 'pos_up_extra_demo/static/src/**/*',
+            'pos_up_extra_demo/static/src/**/*',
         ],
     },
     'installable': True,

@@ -46,3 +46,4 @@ class PosConfig(models.Model):
                 "pos_urbanpiper_username": uk_us_up_username,
                 "pos_urbanpiper_apikey": uk_us_up_api_key,
             })
+        config._update_urbanpiper_records()

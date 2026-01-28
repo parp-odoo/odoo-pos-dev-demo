@@ -16,12 +16,13 @@ class PosConfig(models.Model):
     _inherit = 'pos.config'
 
     def _set_base_url(self, url):
-        try:
-            self.env['ir.config_parameter'].sudo().set_param('web.base.url', url)
-            self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
-        except Exception:
-            self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
-            self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+        # self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
+        self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+
+    def _update_urbanpiper_records(self):
+        if not hasattr(self, 'is_urbanpiper_webhook_register'):
+            return
+        self.is_urbanpiper_webhook_register = True
 
     def load_pos_ub_extra_demo_data_sf(self):
         provider_ids = self.get_record_by_ref([
@@ -65,6 +66,7 @@ class PosConfig(models.Model):
                 "pos_urbanpiper_username": uk_us_up_username,
                 "pos_urbanpiper_apikey": uk_us_up_api_key,
             })
+        furn_shop._update_urbanpiper_records()
 
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
         resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
@@ -93,6 +95,7 @@ class PosConfig(models.Model):
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
                 'is_urbanpiper_webhook_register': True,
             })
+        resto._update_urbanpiper_records()
 
     @api.model
     def action_quick_urbanpiper_test_order(self, store_id, product_id, provider_id):
@@ -109,9 +112,9 @@ class PosConfig(models.Model):
         ]
         UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard']
         if 'pos.urbanpiper.store' in self.env:
-            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(store_id=store_id)
+            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(store_id=store_id)
         else:
-            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(config_id=store_id)
+            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(config_id=store_id)
 
         identifier = str(uuid.uuid4())
         UrbanPiperTestOrder.create({
