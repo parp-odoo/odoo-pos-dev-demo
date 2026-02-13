@@ -23,27 +23,27 @@ That’s it — you’re good to go!
 
 ## 📦 Module Information
 
-### Point of Sale Exta Demo
+### Point of Sale Extra Demo
 - Creates demo printers and links them to all POS configurations for receipt printing.
 - Creates a demo online payment method and adds it to all POS configurations.
 
-### Restaurant Exta Demo
+### Restaurant Extra Demo
 - Adds demo printers to configurations (restaurant, bar, and kiosk) as both receipt and preparation printers.
 - Enables Presets in kiosk
 - Enables **QR + Ordering** self-ordering mode in restaurant POS.
 - Adds kiosk in Kitchen Display.
 
-### POS India localisation Exta Demo
+### POS India localisation Extra Demo
 - Creates IN Furniture Shop, IN Restaurant (with mobile self-order), and IN Kiosk configs under the Indian company.
 - add RazorPay and PineLab payment methods to those config as well.
 - create prep display for resto and kiosk
 
-### POS Urban Piper Exta Demo
+### POS Urban Piper Extra Demo
 - Enables UrbanPiper settings for Furniture Shop and Restaurant (UK/US).
 - Configures ngrok URL in system parameters and disables UrbanPiper production mode.
 - Populates credentials for UrbanPiper settings.
 
-### POS Urban IN Piper Exta Demo
+### POS Urban IN Piper Extra Demo
 - Enables UrbanPiper settings for IN Furniture Shop.
 - Configures ngrok URL in system parameters and disables UrbanPiper production mode.
 - Populates credentials for UrbanPiper settings for IN company.

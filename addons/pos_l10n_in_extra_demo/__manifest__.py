@@ -1,6 +1,6 @@
 
 {
-    'name': 'POS India localisation Exta Demo',
+    'name': 'POS India localisation Extra Demo',
     'category': 'Sales/Point of Sale',
     'sequence': 6,
     'summary': 'Helper module for pos developer to save time for configurations',

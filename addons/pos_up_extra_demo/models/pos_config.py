@@ -11,17 +11,31 @@ uk_us_up_api_key = os.getenv("UK_US_UP_API_KEY")
 uk_us_up_store_prim_id = os.getenv("UK_US_UP_STORE_PRIM_ID")
 uk_us_up_store_sec_id = os.getenv("UK_US_UP_STORE_SEC_ID")
 
+URBANPIPER_EVENT_TYPES = ['order_placed', 'store_creation', 'store_action', 'inventory_update', 'item_state_toggle', 'order_status_update', 'rider_status_update']
+
 
 class PosConfig(models.Model):
     _inherit = 'pos.config'
 
+    def _update_webhooks_records(self, url):
+        if 'pos.urban.piper.webhook' not in self.env:
+            return
+        webhook_url = f'{url}/pos_urban_piper/v1/dev/'
+        self.env['pos.urban.piper.webhook'].create([{
+            'webhook_id': 1,
+            'webhook_url': webhook_url,
+            'event_name': event_type,
+            'company_id': self.env.company.id
+        } for event_type in URBANPIPER_EVENT_TYPES])
+
     def _set_base_url(self, url):
-        try:
-            self.env['ir.config_parameter'].sudo().set_param('web.base.url', url)
-            self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.is_production_mode', 'False')
-        except Exception:
-            self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
-            self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+        # self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
+        self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+        self._update_webhooks_records(url)
+
+    def _update_urbanpiper_records(self):
+        if 'is_urbanpiper_webhook_register' in self:
+            self.is_urbanpiper_webhook_register = True
 
     def load_pos_ub_extra_demo_data_sf(self):
         provider_ids = self.get_record_by_ref([
@@ -59,12 +73,12 @@ class PosConfig(models.Model):
                 "module_pos_urban_piper": True,
                 "urbanpiper_store_identifier": uk_us_up_store_sec_id,
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
-                'is_urbanpiper_webhook_register': True,
             })
             sf_compnay.write({
                 "pos_urbanpiper_username": uk_us_up_username,
                 "pos_urbanpiper_apikey": uk_us_up_api_key,
             })
+        furn_shop._update_urbanpiper_records()
 
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
         resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
@@ -91,8 +105,8 @@ class PosConfig(models.Model):
                 "module_pos_urban_piper": True,
                 "urbanpiper_store_identifier": uk_us_up_store_prim_id,
                 'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
-                'is_urbanpiper_webhook_register': True,
             })
+        resto._update_urbanpiper_records()
 
     @api.model
     def action_quick_urbanpiper_test_order(self, store_id, product_id, provider_id):
@@ -109,9 +123,9 @@ class PosConfig(models.Model):
         ]
         UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard']
         if 'pos.urbanpiper.store' in self.env:
-            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(store_id=store_id)
+            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(store_id=store_id)
         else:
-            UrbanPiperTestOrder =  UrbanPiperTestOrder.with_context(config_id=store_id)
+            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(config_id=store_id)
 
         identifier = str(uuid.uuid4())
         UrbanPiperTestOrder.create({

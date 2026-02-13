@@ -126,6 +126,6 @@ class PosConfig(models.Model):
         for config in configs:
             if config.name != 'IN Furniture Shop':
                 self.with_company(in_company)._add_prep_printer(config)
-                self.with_company(in_company)._add_receipt_printer(config)
+            self.with_company(in_company)._add_receipt_printer(config)
             self.with_company(in_company)._add_online_payment_provider(config)
             config.write({'payment_method_ids': [Command.link(pm.id) for pm in pms]})
