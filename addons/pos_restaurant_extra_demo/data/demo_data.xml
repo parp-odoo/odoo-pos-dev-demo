@@ -5,7 +5,7 @@
             <field name="name">Test-P Prepration</field>
             <field name="printer_type">epson_epos</field>
             <field name="use_type">preparation</field>
-            <field name="epson_printer_ip">pos.stva.ovh/test-p</field>
+            <field name="printer_ip">pos.stva.ovh/test-p</field>
             <field name="product_categories_ids" eval="[
                 (6, 0, [
                     ref('pos_restaurant.food'),
