@@ -20,6 +20,9 @@ This module adds Extra demo data and configurations as mensioned below:
         'data/demo_data.xml',
     ],
     'assets': {
+        'point_of_sale._assets_pos': [
+            'pos_extra_demo/static/src/point_of_sale/**/*',
+        ],
         'pos_preparation_display.assets': [
             "pos_extra_demo/static/src/prep_display/**/*",
         ]

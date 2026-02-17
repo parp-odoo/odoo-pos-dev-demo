@@ -2,10 +2,10 @@
 <odoo>
     <data noupdate="1">
         <record id="prep_printer_001" model="pos.printer">
-            <field name="name">Test-P Prepration</field>
+            <field name="name">Test-P Preparation</field>
             <field name="printer_type">epson_epos</field>
             <field name="use_type">preparation</field>
-            <field name="epson_printer_ip">pos.stva.ovh/test-p</field>
+            <field name="printer_ip">pos.stva.ovh/test-p</field>
             <field name="product_categories_ids" eval="[
                 (6, 0, [
                     ref('pos_restaurant.food'),
