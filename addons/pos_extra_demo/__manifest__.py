@@ -21,6 +21,7 @@ This module adds Extra demo data and configurations as mensioned below:
     ],
     'assets': {
         'point_of_sale._assets_pos': [
+            ('before', 'point_of_sale/static/src/app/models/utils/order_change.js', 'pos_extra_demo/static/src/point_of_sale/patched_util.js'),
             'pos_extra_demo/static/src/point_of_sale/**/*',
         ],
         'pos_preparation_display.assets': [
