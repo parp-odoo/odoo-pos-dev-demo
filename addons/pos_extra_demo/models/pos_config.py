@@ -35,7 +35,6 @@ class PosConfig(models.Model):
             'other_devices': True,
             'preparation_devices': True,
             'receipt_printer_ids': [Command.link(printer.id)],
-            'default_receipt_printer_id': printer.id,
         })
 
     def load_pos_extra_demo_data(self):

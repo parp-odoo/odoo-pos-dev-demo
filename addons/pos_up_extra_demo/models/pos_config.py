@@ -17,21 +17,9 @@ URBANPIPER_EVENT_TYPES = ['order_placed', 'store_creation', 'store_action', 'inv
 class PosConfig(models.Model):
     _inherit = 'pos.config'
 
-    def _update_webhooks_records(self, url):
-        if 'pos.urban.piper.webhook' not in self.env:
-            return
-        webhook_url = f'{url}/pos_urban_piper/v1/dev/'
-        self.env['pos.urban.piper.webhook'].create([{
-            'webhook_id': 1,
-            'webhook_url': webhook_url,
-            'event_name': event_type,
-            'company_id': self.env.company.id
-        } for event_type in URBANPIPER_EVENT_TYPES])
-
     def _set_base_url(self, url):
         # self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
         self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
-        self._update_webhooks_records(url)
 
     def _update_urbanpiper_records(self):
         if 'is_urbanpiper_webhook_register' in self:
@@ -53,20 +41,18 @@ class PosConfig(models.Model):
         sf_compnay = furn_shop.company_id
 
         if 'pos.urbanpiper.store' in self.env:
-            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
+            self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
                 'config_id': furn_shop.id,
                 'name': 'Mid-Wilshire shop',
                 'city': 'San francisco',
                 'store_identifier': uk_us_up_store_sec_id,
                 'urbanpiper_username': uk_us_up_username,
                 'urbanpiper_apikey': uk_us_up_api_key,
-                'urbanpiper_aggregator_ids': [
+                'is_webhook_register': True,
+                'use_test_mode': True,
+                'aggregator_lines': [
                     Command.create({'delivery_provider_id': provider}) for provider in provider_ids
                 ],
-            })
-            furn_shop.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_id": store.id,
             })
         else:
             furn_shop.write({
@@ -82,23 +68,14 @@ class PosConfig(models.Model):
 
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
         resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
-        sf_compnay = resto.company_id
 
         if 'pos.urbanpiper.store' in self.env:
-            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
-                'config_id': resto.id,
-                'name': 'be resto',
-                'city': 'San francisco',
+            demo_store = self.env.ref('pos_urban_piper.pos_urbanpiper_demo_store')
+            demo_store.write({
                 'store_identifier': uk_us_up_store_prim_id,
                 'urbanpiper_username': uk_us_up_username,
                 'urbanpiper_apikey': uk_us_up_api_key,
-                'urbanpiper_aggregator_ids': [
-                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
-                ],
-            })
-            resto.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_id": store.id,
+                'is_webhook_register': True,
             })
         else:
             resto.write({

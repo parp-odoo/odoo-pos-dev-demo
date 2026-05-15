@@ -39,3 +39,5 @@ package.json
 .pydevproject
 
 .env
+
+odoo_query_shell/

@@ -5,7 +5,7 @@
             <field name="name">Test-P Receipt</field>
             <field name="printer_type">epson_epos</field>
             <field name="use_type">receipt</field>
-            <field name="epson_printer_ip">pos.stva.ovh/test-p</field>
+            <field name="printer_ip">pos.stva.ovh/test-p</field>
         </record>
 
         <function model="pos.config" name="load_pos_extra_demo_data" >
