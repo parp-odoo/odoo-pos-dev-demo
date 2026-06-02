@@ -58,7 +58,6 @@ class PosConfig(models.Model):
             'company_id': self.env.company.id,
             'journal_id': journal.id,
             'payment_method_ids': payment_methods_ids,
-            'iface_splitbill': True,
             'module_pos_restaurant': True,
             'use_presets': bool(presets),
             'default_preset_id': presets[0] if presets else False,
@@ -84,7 +83,6 @@ class PosConfig(models.Model):
             'journal_id': journal.id,
             'limit_categories': True,
             'iface_available_categ_ids': restaurant_categories,
-            'iface_splitbill': True,
             'module_pos_restaurant': True,
             'self_ordering_mode': 'kiosk',
             'payment_method_ids': []

@@ -19,7 +19,8 @@ class PosConfig(models.Model):
 
     def _set_base_url(self, url):
         # self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
-        self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+        # self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
+        pass
 
     def _update_urbanpiper_records(self):
         if 'is_urbanpiper_webhook_register' in self:

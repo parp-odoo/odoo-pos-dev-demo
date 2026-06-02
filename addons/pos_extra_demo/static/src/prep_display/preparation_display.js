@@ -6,6 +6,6 @@ import { PrepDisplay } from "@pos_enterprise/app/components/preparation_display/
 patch(PrepDisplay.prototype, {
     setup() {
         super.setup();
-        window.posmodel = reactive(this.prepDisplay);
+        // window.posmodel = reactive(this.prepDisplay);
     }
 });
