@@ -1,5 +1,6 @@
 import os
-from odoo import models, Command
+from odoo import models, Command, _
+from odoo.exceptions import UserError
 
 razorpay_username = os.getenv("RAZORPAY_USERNAME")
 razorpay_tid = os.getenv("RAZORPAY_TID")
@@ -15,15 +16,19 @@ class PosConfig(models.Model):
     _inherit = 'pos.config'
 
     def _get_additional_pm(self):
-        sale_journal = self.env['account.journal'].search(
+        bank_journal = self.env['account.journal'].search(
             domain=[
                 *self.env['account.journal']._check_company_domain(self.env.company.id),
-                ('type', '=', 'sale'),
+                ('type', '=', 'bank'),
+                ('currency_id', '=', False),
             ], limit=1)
+        if not bank_journal:
+            raise UserError(_("No bank journal exists for the company. Please install the chart of accounts or create a bank journal."))
         return self.env['pos.payment.method'].create([
             {
                 'name': 'Demo Razorpay',
-                'journal_id': sale_journal.id,
+                'type': 'bank',
+                'journal_id': bank_journal.id,
                 'payment_method_type': 'terminal',
                 'payment_provider': 'razorpay',
                 'razorpay_username': razorpay_username,
@@ -34,7 +39,8 @@ class PosConfig(models.Model):
             },
             {
                 'name': 'Demo Pine Labs',
-                'journal_id': sale_journal.id,
+                'type': 'bank',
+                'journal_id': bank_journal.id,
                 'payment_method_type': 'terminal',
                 'payment_provider': 'pine_labs',
                 'pine_labs_merchant': pine_labs_merchant,
@@ -52,7 +58,7 @@ class PosConfig(models.Model):
             'pos_restaurant.pos_takein_preset',
             'pos_restaurant.pos_takeout_preset',
             'pos_restaurant.pos_delivery_preset',
-        ]) + self.env['pos.preset'].search([]).ids
+        ])
         resto_config = self.env['pos.config'].create({
             'name': 'IN Restaurant',
             'company_id': self.env.company.id,
