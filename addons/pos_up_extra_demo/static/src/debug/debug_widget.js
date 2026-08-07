@@ -3,22 +3,17 @@ import { patch } from "@web/core/utils/patch";
 import { _t } from "@web/core/l10n/translation";
 
 patch(DebugWidget.prototype, {
-    placeUrbanPiperTestOrder() {
-        super.placeUrbanPiperTestOrder?.();
-        if (this.state.isOpen) {
-            this.toggleWidget?.();
-        }
-    },
     placeUrbanPiperQuickTestOrder() {
-        const providrs = this.pos.deliveryProviders || this.pos.config.urbanpiper_delivery_provider_ids;
+        const urbanpiperStore = this.pos.config.urbanpiper_store_id;
+        const providerIds = urbanpiperStore.delivery_provider_ids.map((provider) => provider.id);;
         const products = this.pos.productsToDisplay;
         this.pos.data.call(
             "pos.config",
             "action_quick_urbanpiper_test_order",
             [
-                this.pos.store?.id || this.pos.config.id,
+                urbanpiperStore.id,
                 products[Math.floor(Math.random() * products.length)].id,
-                providrs[Math.floor(Math.random() * providrs.length)].id,
+                providerIds[Math.floor(Math.random() * providerIds.length)],
             ]
         );
         if (this.state.isOpen) {

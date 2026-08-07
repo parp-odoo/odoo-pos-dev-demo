@@ -48,6 +48,14 @@ That’s it — you’re good to go!
 - Configures ngrok URL in system parameters and disables UrbanPiper production mode.
 - Populates credentials for UrbanPiper settings for IN company.
 
+### POS Germany Certification Extra Demo
+
+* Uses the local IAP endpoint for the German PoS certification service.
+* Appends the current day and month to the German demo company name for easier identification on the Fiskaly Portal.
+* Registers the German demo company with Fiskaly when the local IAP service is available.
+* Creates **DE Furniture Shop** and **DE Restaurant** POS configurations, with mobile self-ordering enabled for the restaurant.
+* Creates a preparation display and configures preparation and receipt printers.
+
 
 ## ⚠️ Disclaimer
 This repository is provided as-is.<br/>
