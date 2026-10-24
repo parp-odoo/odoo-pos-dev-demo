@@ -1,6 +1,5 @@
-from . import controllers
+from dotenv import load_dotenv
+
 from . import models
 
-from dotenv import load_dotenv
-# Load variables from .env
 load_dotenv()

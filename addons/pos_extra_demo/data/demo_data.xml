@@ -8,7 +8,7 @@
             <field name="printer_ip">pos.stva.ovh/test-p</field>
         </record>
 
-        <function model="pos.config" name="load_pos_extra_demo_data" >
+        <function model="pos.config" name="load_pos_extra_demo_data">
             <value model="pos.config" eval="obj()"/>
         </function>
     </data>

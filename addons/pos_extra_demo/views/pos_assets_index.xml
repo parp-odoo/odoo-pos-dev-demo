@@ -4,7 +4,7 @@
 <template id="pos_extra_demo.dev_dashboard" name="POS Dev Index">&lt;!DOCTYPE html&gt;
 <html>
     <head>
-        <title>Odoo Pos Devloper Dashboard</title>
+        <title>Odoo POS Developer Dashboard</title>
 
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
         <meta http-equiv="content-type" content="text/html, charset=utf-8" />
