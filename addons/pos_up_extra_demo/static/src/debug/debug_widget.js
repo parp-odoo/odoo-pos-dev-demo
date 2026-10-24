@@ -1,23 +1,23 @@
 import { DebugWidget } from "@point_of_sale/app/utils/debug/debug_widget";
 import { patch } from "@web/core/utils/patch";
-import { _t } from "@web/core/l10n/translation";
 
 patch(DebugWidget.prototype, {
-    placeUrbanPiperQuickTestOrder() {
-        const urbanpiperStore = this.pos.config.urbanpiper_store_id;
-        const providerIds = urbanpiperStore.delivery_provider_ids.map((provider) => provider.id);;
-        const products = this.pos.productsToDisplay;
-        this.pos.data.call(
-            "pos.config",
-            "action_quick_urbanpiper_test_order",
-            [
-                urbanpiperStore.id,
-                products[Math.floor(Math.random() * products.length)].id,
-                providerIds[Math.floor(Math.random() * providerIds.length)],
-            ]
+    async placeUrbanPiperQuickTestOrder() {
+        const target = this.pos.config.urbanpiper_store_id;
+        const providers = target?.delivery_provider_ids ?? [];
+        const products = this.pos.productsToDisplay.filter(
+            (product) => product.available_in_pos && product.product_tmpl_id
         );
-        if (this.state.isOpen) {
-            this.toggleWidget?.();
+        if (!target || !providers.length || !products.length) {
+            return;
         }
+        const product = products[Math.floor(Math.random() * products.length)];
+        const provider = providers[Math.floor(Math.random() * providers.length)];
+        await this.pos.data.call("pos.config", "action_quick_urbanpiper_test_order", [
+            target.id,
+            product.product_tmpl_id.id,
+            provider.id,
+        ]);
+        this.toggleWidget?.();
     },
 });
