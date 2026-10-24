@@ -1,7 +1,8 @@
+from datetime import datetime, timedelta
 import uuid
 
-from odoo import _, fields, models
-from datetime import datetime, timedelta
+from odoo import _, api, fields, models
+from odoo.exceptions import AccessError, ValidationError
 
 from odoo.addons.pos_urban_piper.controllers.main import PosUrbanPiperController
 
@@ -12,6 +13,7 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
 
     product_id = fields.Many2one(
         'product.template',
+        required=True,
         string='Product',
         help='Test order product',
         domain="[('available_in_pos', '=', True)]"
@@ -19,6 +21,7 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
     quantity = fields.Integer(
         string='Quantity',
         default=1,
+        required=True,
         help='Test order quantity',
     )
     discount_amount = fields.Integer(
@@ -40,10 +43,20 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
     )
     delivery_provider_id = fields.Many2one(
         'pos.delivery.provider',
+        required=True,
         string='Delivery Provider',
         help='Responsible delivery provider for test order, e.g., UberEats, Zomato.'
     )
 
+    @api.constrains('quantity', 'discount_amount', 'packaging_charge', 'delivery_charge')
+    def _check_demo_order_amounts(self):
+        for wizard in self:
+            if wizard.quantity <= 0:
+                raise ValidationError(_('The demo order quantity must be positive.'))
+            if min(wizard.discount_amount, wizard.packaging_charge, wizard.delivery_charge) < 0:
+                raise ValidationError(_('Demo order amounts cannot be negative.'))
+
+    @api.private
     def test_order_json(self, data):
         taxes = data['product_id'].taxes_id.compute_all(
             data['product_id'].list_price, data['product_id'].currency_id, data['quantity']
@@ -53,6 +66,8 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
         )['total_excluded']
         price_with_tax = taxes['total_included']
         price_without_tax = taxes['total_excluded']
+        now = datetime.now()
+        pickup_time = int((now + timedelta(minutes=25)).timestamp() * 1000)
         payload = {
             "customer": {
                 "username": "meet_jivani",
@@ -99,18 +114,18 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
                     "payable_amount": price_with_tax,
                     "total_external_discount": 0.0,
                     "order_total": price_with_tax,
-                    "expected_pickup_time": int((datetime.now() + timedelta(minutes=25)).timestamp() * 1000),
+                    "expected_pickup_time": pickup_time,
                     "state": "Placed",
                     "discount": 0.0,
                     "channel": data['delivery_provider_id'].technical_name,
-                    "delivery_datetime": int((datetime.now() + timedelta(minutes=25)).timestamp() * 1000),
+                    "delivery_datetime": pickup_time,
                     "item_level_total_charges": 0,
                     "item_taxes": 0.0,
                     "modified_to": None,
                     "item_level_total_taxes": price_with_tax - price_without_tax,
                     "order_state": "Placed",
                     "instructions": "Test order instructions",
-                    "created": int(datetime.now().timestamp() * 1000),
+                    "created": int(now.timestamp() * 1000),
                     "charges": [],
                     "country": "India",
                     "biz_name": "Odoo_IN",
@@ -135,7 +150,7 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
                         "id": "MNHLAW3L"
                     }],
                     "order_level_total_taxes": 0,
-                    "order_subtotal": price_without_tax * data['quantity'],
+                    "order_subtotal": price_without_tax,
                 },
                 "payment": [{
                     "amount": price_with_tax,
@@ -153,34 +168,19 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
                 "urban_piper_test": True,
             }
         }
-        charges = []
-        if data['packaging_charge'] > 0:
-            charges.append({
-                'taxes': [
-                    {
-                        'rate': None,
-                        'liability_on': 'aggregator',
-                        'value': (data['packaging_charge'] * 15) / 100,
-                        'title': 'VAT'
-                    }
-                ],
-                'value': data['packaging_charge'],
-                'title': 'Packaging Charge'
-            })
-        if data['delivery_charge'] > 0:
-            charges.append({
-                'taxes': [
-                    {
-                        'rate': None,
-                        'liability_on': 'aggregator',
-                        'value': (data['delivery_charge'] * 15) / 100,
-                        'title': 'VAT'
-                    }
-                ],
-                'value': data['delivery_charge'],
-                'title': 'Delivery Charge'
-            })
-        payload["order"]["details"]["charges"] = charges
+        payload['order']['details']['charges'] = [{
+            'taxes': [{
+                'rate': None,
+                'liability_on': 'aggregator',
+                'value': amount * 0.15,
+                'title': 'VAT',
+            }],
+            'value': amount,
+            'title': title,
+        } for title, amount in (
+            ('Packaging Charge', data['packaging_charge']),
+            ('Delivery Charge', data['delivery_charge']),
+        ) if amount > 0]
         discounts = []
         if data['discount_amount'] > 0:
             discounts.append({
@@ -195,14 +195,22 @@ class UrbanPiperTestOrderWizard(models.TransientModel):
         return payload
 
     def make_test_order(self, delivery_identifier=False):
+        self.ensure_one()
+        if not self.env.user.has_group('point_of_sale.group_pos_user'):
+            raise AccessError(_('Only Point of Sale users can place demo orders.'))
+        config_id = self.env['pos.config'].browse(self.env.context.get('config_id')).exists()
+        config_id.ensure_one()
+        config_id.check_access('read')
+        if config_id.company_id not in self.env.companies:
+            raise AccessError(_('The Point of Sale belongs to another company.'))
+        if self.delivery_provider_id not in config_id.urbanpiper_delivery_provider_ids:
+            raise ValidationError(_('Select a configured delivery provider.'))
+        self.product_id.check_access('read')
+        if not self.product_id.available_in_pos or (
+            self.product_id.company_id and self.product_id.company_id != config_id.company_id
+        ):
+            raise ValidationError(_('Select a Point of Sale product from the same company.'))
         msg = ''
-        user_name = self.env['ir.config_parameter'].sudo().get_param('pos_urban_piper.urbanpiper_username', False)
-        if not user_name:
-            self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.urbanpiper_username', 'demo')
-        api_key = self.env['ir.config_parameter'].sudo().get_param('pos_urban_piper.urbanpiper_apikey', False)
-        if not api_key:
-            self.env['ir.config_parameter'].sudo().set_param('pos_urban_piper.urbanpiper_apikey', 'demo')
-        config_id = self.env['pos.config'].browse(self._context.get('config_id'))
         if not config_id.current_session_id:
             msg += _('Please start a POS session first.\n')
         if not config_id.urbanpiper_store_identifier:
