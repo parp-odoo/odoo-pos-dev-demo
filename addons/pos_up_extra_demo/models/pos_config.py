@@ -1,136 +1,105 @@
+import logging
 import os
-import uuid
 import random
 
-from odoo import api, models, Command
+from odoo import Command, _, api, models
+from odoo.exceptions import AccessError, UserError
 
-ngrok_url = os.getenv("NGROK_URL")
-uk_us_up_username = os.getenv("UK_US_UP_USERNAME")
-uk_us_up_api_key = os.getenv("UK_US_UP_API_KEY")
+_logger = logging.getLogger(__name__)
 
-uk_us_up_store_prim_id = os.getenv("UK_US_UP_STORE_PRIM_ID")
-uk_us_up_store_sec_id = os.getenv("UK_US_UP_STORE_SEC_ID")
-
-URBANPIPER_EVENT_TYPES = ['order_placed', 'store_creation', 'store_action', 'inventory_update', 'item_state_toggle', 'order_status_update', 'rider_status_update']
+QUICK_ORDER_NOTES = (
+    'Please deliver with the confidence of a developer in production mode.',
+    'If food is late, we blame the staging server.',
+    'Handle with care; my testing team is watching.',
+    'If this order crashes, clear cache and try again.',
+    'Include napkins; my commit history is already messy.',
+)
 
 
 class PosConfig(models.Model):
     _inherit = 'pos.config'
 
-    def _update_webhooks_records(self, url):
-        if 'pos.urban.piper.webhook' not in self.env:
-            return
-        webhook_url = f'{url}/pos_urban_piper/v1/dev/'
-        self.env['pos.urban.piper.webhook'].create([{
-            'webhook_id': 1,
-            'webhook_url': webhook_url,
-            'event_name': event_type,
-            'company_id': self.env.company.id
-        } for event_type in URBANPIPER_EVENT_TYPES])
-
     def _set_base_url(self, url):
-        # self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
-        self.env['ir.config_parameter'].sudo().set_str('pos_urban_piper.is_production_mode', 'False')
-        self._update_webhooks_records(url)
+        # Demo loading runs as the installer; parameter writes stay private.
+        parameters = self.env['ir.config_parameter']
+        parameters.set_str('pos_urban_piper.is_production_mode', 'False')
+        if url:
+            parameters.set_str('web.base.url', url)
 
-    def _update_urbanpiper_records(self):
-        if 'is_urbanpiper_webhook_register' in self:
-            self.is_urbanpiper_webhook_register = True
+    def _configure_demo_urbanpiper(self, config, store_identifier, username, api_key,
+                                  provider_ids, name, city):
+        if not config or not all((store_identifier, username, api_key)):
+            _logger.info('Skipping optional UrbanPiper setup: missing configuration or credentials')
+            return
+        config.ensure_one()
+        config = config.with_company(config.company_id)
+        config.write({
+            'module_pos_urban_piper': True,
+            'urbanpiper_store_identifier': store_identifier,
+            'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
+            'urbanpiper_webhook_url': config.get_base_url(),
+        })
+        config.company_id.write({
+            'pos_urbanpiper_username': username,
+            'pos_urbanpiper_apikey': api_key,
+        })
 
+    @api.private
     def load_pos_ub_extra_demo_data_sf(self):
         provider_ids = self.get_record_by_ref([
             'pos_urban_piper.pos_delivery_provider_ubereats',
             'pos_urban_piper.pos_delivery_provider_doordash',
             'pos_urban_piper.pos_delivery_provider_justeat',
         ])
-
-        self._set_base_url(ngrok_url)
+        self._set_base_url(os.getenv('NGROK_URL'))
         self.load_pos_ub_extra_demo_data_sf_resto(provider_ids)
         self.load_pos_ub_extra_demo_data_sf_furn_shop(provider_ids[:-1])
 
+    @api.private
     def load_pos_ub_extra_demo_data_sf_furn_shop(self, provider_ids):
-        furn_shop = self.env.ref('point_of_sale.pos_config_main')
-        sf_compnay = furn_shop.company_id
+        config = self.env.ref('point_of_sale.pos_config_main', raise_if_not_found=False)
+        self._configure_demo_urbanpiper(
+            config, os.getenv('UK_US_UP_STORE_SEC_ID'),
+            os.getenv('UK_US_UP_USERNAME'), os.getenv('UK_US_UP_API_KEY'),
+            provider_ids, 'Test-P Store', 'San Francisco',
+        )
 
-        if 'pos.urbanpiper.store' in self.env:
-            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
-                'config_id': furn_shop.id,
-                'name': 'Mid-Wilshire shop',
-                'city': 'San francisco',
-                'store_identifier': uk_us_up_store_sec_id,
-                'urbanpiper_username': uk_us_up_username,
-                'urbanpiper_apikey': uk_us_up_api_key,
-                'urbanpiper_aggregator_ids': [
-                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
-                ],
-            })
-            furn_shop.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_id": store.id,
-            })
-        else:
-            furn_shop.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_identifier": uk_us_up_store_sec_id,
-                'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
-            })
-            sf_compnay.write({
-                "pos_urbanpiper_username": uk_us_up_username,
-                "pos_urbanpiper_apikey": uk_us_up_api_key,
-            })
-        furn_shop._update_urbanpiper_records()
-
+    @api.private
     def load_pos_ub_extra_demo_data_sf_resto(self, provider_ids):
-        resto = self.env.ref('pos_restaurant.pos_config_main_restaurant')
-        sf_compnay = resto.company_id
-
-        if 'pos.urbanpiper.store' in self.env:
-            store = self.env['pos.urbanpiper.store'].with_company(sf_compnay).create({
-                'config_id': resto.id,
-                'name': 'be resto',
-                'city': 'San francisco',
-                'store_identifier': uk_us_up_store_prim_id,
-                'urbanpiper_username': uk_us_up_username,
-                'urbanpiper_apikey': uk_us_up_api_key,
-                'urbanpiper_aggregator_ids': [
-                    Command.create({'delivery_provider_id': provider}) for provider in provider_ids
-                ],
-            })
-            resto.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_id": store.id,
-            })
-        else:
-            resto.write({
-                "module_pos_urban_piper": True,
-                "urbanpiper_store_identifier": uk_us_up_store_prim_id,
-                'urbanpiper_delivery_provider_ids': [Command.set(provider_ids)],
-            })
-        resto._update_urbanpiper_records()
+        config = self.env.ref('pos_restaurant.pos_config_main_restaurant', raise_if_not_found=False)
+        self._configure_demo_urbanpiper(
+            config, os.getenv('UK_US_UP_STORE_PRIM_ID'),
+            os.getenv('UK_US_UP_USERNAME'), os.getenv('UK_US_UP_API_KEY'),
+            provider_ids, 'Test-P Restaurant', 'San Francisco',
+        )
 
     @api.model
     def action_quick_urbanpiper_test_order(self, store_id, product_id, provider_id):
-        order_notes = [
-            "Please deliver with the confidence of a developer in production mode. 🚀",
-            "If food is late, we blame the staging server. 🐢",
-            "Handle with care; my testing team is watching. 👀",
-            "If this order crashes, clear cache and try again. 💥",
-            "Please ignore this note. It's just here for testing… or is it? 🤫",
-            "Pack it tight; my ORM doesn't like loose relations. 🔗",
-            "Include napkins; my commit history is already messy. 🧻",
-            "Ring the bell like you found a production bug at 5 PM. 🔔",
-            "Leave at the door. I'm in a meeting explaining why tests matter. 📉",
-        ]
-        UrbanPiperTestOrder = self.env['pos.urbanpiper.test.order.wizard']
-        if 'pos.urbanpiper.store' in self.env:
-            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(store_id=store_id)
-        else:
-            UrbanPiperTestOrder = UrbanPiperTestOrder.with_context(config_id=store_id)
-
-        identifier = str(uuid.uuid4())
-        UrbanPiperTestOrder.create({
-            'product_id': product_id,
+        if not self.env.user.has_group('point_of_sale.group_pos_user'):
+            raise AccessError(_('Only Point of Sale users can place demo orders.'))
+        config = self.browse(store_id).exists()
+        if not config:
+            raise UserError(_('Select a Point of Sale for the demo order.'))
+        config.check_access('read')
+        if config.company_id not in self.env.companies:
+            raise AccessError(_('The Point of Sale belongs to another company.'))
+        if not config.current_session_id or config.current_session_id.state != 'opened':
+            raise UserError(_('Open a Point of Sale session before placing a demo order.'))
+        product = self.env['product.template'].browse(product_id).exists()
+        if not product:
+            raise UserError(_('Select a product for the demo order.'))
+        product.check_access('read')
+        if not product.available_in_pos or (product.company_id and product.company_id != config.company_id):
+            raise UserError(_('Select a Point of Sale product from the same company.'))
+        if provider_id not in config.urbanpiper_delivery_provider_ids.ids:
+            raise UserError(_('Select a delivery provider configured for this Point of Sale.'))
+        wizard = self.env['pos.urbanpiper.test.order.wizard'].with_company(config.company_id).with_context(
+            config_id=store_id,
+        ).create({
+            'product_id': product.id,
             'quantity': 7,
             'delivery_provider_id': provider_id,
-            'delivery_instruction': random.choice(order_notes),
-        }).make_test_order(identifier)
+            'delivery_instruction': random.choice(QUICK_ORDER_NOTES),
+        })
+        wizard.make_test_order()
+        return True
