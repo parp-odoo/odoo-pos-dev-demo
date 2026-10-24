@@ -1,5 +1,4 @@
-
-from odoo import models, Command
+from odoo import Command, api, models
 
 
 class PosConfig(models.Model):
@@ -10,50 +9,59 @@ class PosConfig(models.Model):
         if printer:
             config.write({
                 'is_order_printer': True,
-                'printer_ids': [Command.link(printer.id)]
+                'printer_ids': [Command.link(printer.id)],
             })
 
+    def _get_or_create_demo_prep_display(self, name, configs):
+        Display = self.env['pos.prep.display'].with_company(self.env.company)
+        display = Display.search([
+            ('name', '=', name),
+            ('company_id', '=', self.env.company.id),
+        ], limit=1)
+        values = {'pos_config_ids': [Command.set(configs.ids)]}
+        if display:
+            display.write(values)
+        else:
+            display = Display.create({'name': name, **values})
+        return display
+
     def _load_pos_self_extra_demo(self):
-        kiosk_config = self.search([('name', '=', 'Kiosk')])
+        kiosk = self.search([
+            ('name', '=', 'Kiosk'),
+            ('company_id', '=', self.env.company.id),
+        ])
+        self._add_receipt_printer(kiosk)
+        self._add_prep_printer(kiosk)
+        displays = self.env['pos.prep.display'].search([
+            ('company_id', '=', self.env.company.id),
+        ])
+        displays.write({'pos_config_ids': [Command.link(config.id) for config in kiosk]})
 
-        self._add_receipt_printer(kiosk_config)
-        self._add_prep_printer(kiosk_config)
-
-        if 'pos.prep.display' in self.env:
-            prep_display = self.env['pos.prep.display'].search([])
-            if prep_display:
-                prep_display.pos_config_ids |= kiosk_config
-
+    @api.private
     def load_pos_restaurant_extra_demo_data(self):
-        config_ids = self.get_record_by_ref([
+        configs = self.browse(self.get_record_by_ref([
             'pos_restaurant.pos_config_main_restaurant',
             'pos_restaurant.pos_config_main_bar',
-        ])
-        configs = self.browse(config_ids)
-
-        for config in configs:
-            self._add_receipt_printer(config)
-            self._add_prep_printer(config)
-
-        resto = configs[0]
-
-        # cancel draft orders
-        draft_orders = self.env['pos.order'].search([('state', '=', 'draft')])
-        draft_orders.write({'state': 'cancel'})
-
-        # close restaurant session
-        existing_session = self.env.ref('pos_restaurant.pos_open_session_2', raise_if_not_found=False)
-        existing_session.action_pos_session_closing_control()
-
-        self._add_online_payment_provider(resto)
-        resto.write({
-            'self_ordering_mode': 'mobile',
-            'self_ordering_pay_after': 'each',
-        })
-
-        if 'pos.prep.display' in self.env:
-            prep_display = self.env['pos.prep.display'].search([])
-            if prep_display:
-                prep_display.pos_config_ids = configs
-                prep_display.category_ids = []
+        ]))
+        self._add_receipt_printer(configs)
+        self._add_prep_printer(configs)
+        restaurant = self.env.ref('pos_restaurant.pos_config_main_restaurant', raise_if_not_found=False)
+        if restaurant:
+            session = self.env.ref('pos_restaurant.pos_open_session_2', raise_if_not_found=False)
+            if session and session.state != 'closed':
+                self.env['pos.order'].search([
+                    ('session_id', '=', session.id), ('state', '=', 'draft'),
+                ]).write({'state': 'cancel'})
+                session.action_pos_session_closing_control()
+            self._add_online_payment_provider(restaurant)
+            restaurant.write({
+                'self_ordering_mode': 'mobile',
+                'self_ordering_pay_after': 'each',
+            })
+        for company in configs.company_id:
+            displays = self.env['pos.prep.display'].search([('company_id', '=', company.id)])
+            displays.write({
+                'pos_config_ids': [Command.set(configs.filtered(lambda pos: pos.company_id == company).ids)],
+                'category_ids': [Command.clear()],
+            })
         self._load_pos_self_extra_demo()
