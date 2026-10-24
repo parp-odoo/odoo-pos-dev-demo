@@ -94,3 +94,8 @@ class PosConfig(models.Model):
                     lambda method: method.name in ('Cash', 'Card')
                 ).ids)],
             })
+            cash_methods = furniture_shop.payment_method_ids.filtered(lambda method: method.type == 'cash')
+            if cash_methods:
+                currencies = furniture_shop.currency_id | self.env.ref('base.USD') | self.env.ref('base.EUR')
+                currencies.filtered(lambda currency: not currency.active).write({'active': True})
+                cash_methods.write({'currency_ids': [Command.link(currency.id) for currency in currencies]})
