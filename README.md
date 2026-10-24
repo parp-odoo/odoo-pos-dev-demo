@@ -18,7 +18,7 @@ Demo loaders reuse localized POS configurations and preparation displays.
 
 | Addon | Demo setup |
 | --- | --- |
-| `pos_extra_demo` | Receipt printers and demo online payments; fast payment where supported. |
+| `pos_extra_demo` | Receipt printers and demo online payments; fast payment where supported. From 20.0, Furniture Shop cash payments also accept USD, EUR and the store currency. |
 | `pos_restaurant_extra_demo` | Restaurant/bar preparation printers, mobile self-ordering, kiosk and preparation display links. |
 | `pos_l10n_in_extra_demo` | Indian furniture shop, restaurant and kiosk, preparation display, Razorpay and Pine Labs terminals. |
 | `pos_up_extra_demo` | US UrbanPiper stores/providers, optional webhook URL and a quick-order debug button. |
