@@ -3,21 +3,18 @@
     <record id="employee_minimal" model="hr.employee">
         <field name="name">Minimal</field>
         <field name="company_id" ref="base.main_company"/>
-        <field name="pin">3333</field>
         <field name="barcode">POSMINIMAL</field>
     </record>
 
     <record id="employee_cashier" model="hr.employee">
         <field name="name">Cashier</field>
         <field name="company_id" ref="base.main_company"/>
-        <field name="pin">1111</field>
         <field name="barcode">POSCASHIER</field>
     </record>
 
     <record id="employee_manager" model="hr.employee">
         <field name="name">Manager</field>
         <field name="company_id" ref="base.main_company"/>
-        <field name="pin">2222</field>
         <field name="barcode">POSMANAGER</field>
     </record>
 
