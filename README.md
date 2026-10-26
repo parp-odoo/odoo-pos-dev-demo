@@ -37,12 +37,12 @@ Odoo user. Additional employees have no backend user and receive their role from
 the POS configuration. Each role is assigned to a separate employee. Odoo also
 includes employees linked to existing POS manager users automatically.
 
-| Employee | PIN | Barcode |
-| --- | --- | --- |
-| Supervised | `4444` | `POSSUPERVISED` |
-| Restrictive | `3333` | `POSRESTRICTIVE` |
-| Cashier | `1111` | `POSCASHIER` |
-| Manager | `2222` | `POSMANAGER` |
+| Employee | Barcode |
+| --- | --- |
+| Supervised | `POSSUPERVISED` |
+| Restrictive | `POSRESTRICTIVE` |
+| Cashier | `POSCASHIER` |
+| Manager | `POSMANAGER` |
 
 18.0 supports Cashier and Manager; 19.0 through saas-19.4 also support Minimal.
 20.0 and master support Supervised, Restrictive, Cashier and Manager.
