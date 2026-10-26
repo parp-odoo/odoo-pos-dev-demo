@@ -29,23 +29,3 @@ Demo loaders reuse localized POS configurations and preparation displays.
 UrbanPiper setup is skipped when the store identifier or credentials are missing.
 An absent `NGROK_URL` leaves the existing base URL unchanged. Quick demo orders
 require an open POS session and a configured product and delivery provider.
-
-## Employee login
-
-Mitchell Admin (`hr.employee_admin`) keeps administrator access through the existing
-Odoo user. Additional employees have no backend user and receive their role from
-the POS configuration. Each role is assigned to a separate employee. Odoo also
-includes employees linked to existing POS manager users automatically.
-
-| Employee | Barcode |
-| --- | --- |
-| Cashier | `POSCASHIER` |
-| Manager | `POSMANAGER` |
-
-18.0 supports Cashier and Manager; 19.0 through saas-19.4 also support Minimal.
-20.0 and master support Supervised, Restrictive, Cashier and Manager.
-
-On 18.0, the bundled restaurant demo session is closed and its draft demo
-orders are cancelled before employee login is enabled.
-
-These credentials and integrations are for development demo databases.
