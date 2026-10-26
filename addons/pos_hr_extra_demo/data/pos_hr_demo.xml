@@ -3,14 +3,12 @@
     <record id="employee_cashier" model="hr.employee">
         <field name="name">Cashier</field>
         <field name="company_id" ref="base.main_company"/>
-        <field name="pin">1111</field>
         <field name="barcode">POSCASHIER</field>
     </record>
 
     <record id="employee_manager" model="hr.employee">
         <field name="name">Manager</field>
         <field name="company_id" ref="base.main_company"/>
-        <field name="pin">2222</field>
         <field name="barcode">POSMANAGER</field>
     </record>
 
