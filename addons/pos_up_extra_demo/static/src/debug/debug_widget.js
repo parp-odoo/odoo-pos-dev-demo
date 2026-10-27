@@ -5,9 +5,7 @@ patch(DebugWidget.prototype, {
     async placeUrbanPiperQuickTestOrder() {
         const target = this.pos.config;
         const providers = this.pos.config.urbanpiper_delivery_provider_ids ?? [];
-        const products = this.pos.productsToDisplay.filter(
-            (product) => product.available_in_pos && product.product_tmpl_id
-        );
+        const products = this.pos.productsToDisplay.filter((product) => product.available_in_pos);
         if (!target || !providers.length || !products.length) {
             return;
         }
@@ -15,7 +13,7 @@ patch(DebugWidget.prototype, {
         const provider = providers[Math.floor(Math.random() * providers.length)];
         await this.pos.data.call("pos.config", "action_quick_urbanpiper_test_order", [
             target.id,
-            product.product_tmpl_id.id,
+            product.id,
             provider.id,
         ]);
         this.toggleWidget?.();
