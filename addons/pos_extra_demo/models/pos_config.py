@@ -48,6 +48,7 @@ class PosConfig(models.Model):
         if printer:
             config.write({
                 'other_devices': True,
+                'iface_cashdrawer': True,
                 'preparation_devices': True,
                 'receipt_printer_ids': [Command.link(printer.id)],
                 'default_receipt_printer_id': printer.id,
