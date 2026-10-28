@@ -32,6 +32,7 @@ class PosConfig(models.Model):
     def _add_receipt_printer(self, config):
         config.write({
             'other_devices': True,
+            'iface_cashdrawer': True,
             'epson_printer_ip': 'pos.stva.ovh/test-p'
         })
 
