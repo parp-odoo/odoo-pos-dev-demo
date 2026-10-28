@@ -5,6 +5,7 @@
             <field name="name">Test-P Receipt</field>
             <field name="printer_type">epson_epos</field>
             <field name="use_type">receipt</field>
+            <field name="use_cashdrawer" eval="True"/>
             <field name="printer_ip">pos.stva.ovh/test-p</field>
         </record>
 
