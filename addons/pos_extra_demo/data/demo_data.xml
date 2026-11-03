@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
+<odoo noupdate="0">
+    <record id="point_of_sale.group_pos_user" model="res.groups">
+        <field name="user_ids" eval="[Command.link(ref('base.user_demo'))]"/>
+    </record>
+
     <data noupdate="1">
         <record id="receipt_printer_001" model="pos.printer">
             <field name="name">Test-P Receipt</field>
