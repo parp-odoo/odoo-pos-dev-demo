@@ -15,6 +15,12 @@
         'point_of_sale._assets_pos': [
             'pos_extra_demo/static/src/point_of_sale/**/*',
         ],
+        'pos_extra_demo._assets_debug_menu': [
+            'pos_extra_demo/static/src/debug_menu/**/*',
+        ],
+        'pos_preparation_display.assets': [
+            ('include', 'pos_extra_demo._assets_debug_menu'),
+        ],
     },
     'installable': True,
     'auto_install': ['point_of_sale'],
