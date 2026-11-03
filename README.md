@@ -14,6 +14,12 @@ Odoo: `18.0`, `19.0`, `saas-19.1` through `saas-19.4`, `20.0`, or `master`.
 Demo XML is loaded only in demo databases. Existing XML ids are preserved.
 Demo loaders reuse localized POS configurations and preparation displays.
 
+POS, self-order and preparation display debug menus include a **Virtual Printer**
+link. Enable developer mode with `debug=1` to show the menus. For automatic native
+browser split view, install the bundled
+[Chrome extension](addons/pos_extra_demo/tools/virtual_printer_extension/README.md)
+(Chrome 155+).
+
 ## Addons
 
 | Addon | Demo setup |
