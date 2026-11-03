@@ -3,6 +3,13 @@ This repository provides extra demo data for Odoo Point of Sale modules.<br/>
 The goal is to save developers valuable time during testing by avoiding repetitive configuration.<br/>
 (Because let’s be honest — testing is the fun part! 😄)
 
+
+POS, self-order and preparation display debug menus include a **Virtual Printer**
+link. Enable developer mode with `debug=1` to show the menus. For automatic native
+browser split view, install the bundled
+[Chrome extension](addons/pos_extra_demo/tools/virtual_printer_extension/README.md)
+(Chrome 155+).
+
 ## 🚀 Setup Instructions
 1. Clone this repository:
 

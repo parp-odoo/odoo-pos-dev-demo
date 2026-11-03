@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="pos_extra_demo.DebugMenu">
+        <div t-if="this.isDebug"
+            class="o_pos_extra_demo_debug_menu position-fixed bottom-0 end-0 m-2">
+            <button t-if="!this.state.isOpen" type="button"
+                class="o_pos_extra_demo_debug_button btn btn-danger rounded-circle shadow-sm"
+                title="Open debug menu" aria-label="Open debug menu"
+                t-on-click="this.toggleMenu">
+                <i class="fa fa-bug" aria-hidden="true"/>
+            </button>
+            <div t-else="" class="card shadow-lg p-2 d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                    <strong>Debug menu</strong>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        title="Close debug menu" aria-label="Close debug menu"
+                        t-on-click="this.toggleMenu">
+                        <i class="fa fa-times" aria-hidden="true"/>
+                    </button>
+                </div>
+                <a class="btn btn-secondary btn-sm text-nowrap"
+                    data-pos-virtual-printer="true"
+                    href="https://pos.stva.ovh/printer/test-p" target="_blank" rel="noopener noreferrer"
+                    title="Open virtual printer in browser split view"
+                    t-on-click="this.openVirtualPrinter">
+                    <i class="fa fa-print" aria-hidden="true"/> Virtual Printer
+                </a>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="pos_extra_demo.DebugWidget" t-inherit="point_of_sale.DebugWidget" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('debug-hardware-events')]/ul" position="inside">
+            <li>
+                <a class="btn btn-secondary btn-sm text-nowrap"
+                    data-pos-virtual-printer="true"
+                    href="https://pos.stva.ovh/printer/test-p" target="_blank" rel="noopener noreferrer"
+                    title="Open virtual printer in browser split view"
+                    t-on-click="() => this.debug.toggleWidget()">
+                    <i class="fa fa-print" aria-hidden="true"/> Virtual Printer
+                </a>
+            </li>
+        </xpath>
+    </t>
+</templates>
