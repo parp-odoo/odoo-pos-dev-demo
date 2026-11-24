@@ -8,6 +8,11 @@
     'demo': [
         'data/demo_data.xml',
     ],
+    'assets': {
+        'pos_self_order.assets': [
+            ('include', 'pos_extra_demo._assets_debug_menu'),
+        ],
+    },
     'installable': True,
     'auto_install': True,
     'author': 'Parthkumar Patel (PARP)',

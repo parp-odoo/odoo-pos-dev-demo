@@ -47,8 +47,6 @@ class PosConfig(models.Model):
         printer = self.env.ref('pos_extra_demo.receipt_printer_001', raise_if_not_found=False)
         if printer:
             config.write({
-                'other_devices': True,
-                'preparation_devices': True,
                 'receipt_printer_ids': [Command.link(printer.id)],
             })
 
