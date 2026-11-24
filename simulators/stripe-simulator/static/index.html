@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stripe Simulator</title>
+<style>
+:root{--bg:#f6f8fa;--card:#fff;--fg:#1a1f36;--muted:#697386;--line:#e3e8ee;--accent:#635bff;--ok:#0e7a4d;--ko:#b3261e;--warn:#a15c00}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1220;--card:#131c2e;--fg:#e6ebf1;--muted:#8792a2;--line:#243049;--accent:#8c85ff;--ok:#3ce08f;--ko:#ff8a80;--warn:#ffd166}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:17px;margin:0;flex:1}
+main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px;padding:16px;max-width:1500px;margin:auto}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+section.wide{grid-column:1/-1}
+h2{font-size:14px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+h2 span{flex:1}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.scroll{overflow-x:auto}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid currentColor}
+.s-succeeded,.s-online{color:var(--ok)}.s-requires_capture,.s-requires_confirmation{color:var(--warn)}
+.s-canceled,.s-failed,.s-offline{color:var(--ko)}.s-requires_payment_method{color:var(--muted)}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+form{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+form input{flex:1;min-width:110px}
+.muted{color:var(--muted)}
+#log details pre{white-space:pre-wrap;word-break:break-all;max-height:360px;overflow:auto;background:var(--bg);border-radius:6px;padding:8px;margin:6px 0 0}
+#log summary{cursor:pointer}
+#out{white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);border-radius:6px;padding:8px;margin:10px 0 0}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Stripe Terminal simulator</h1>
+  <label class="muted">MCC <input id="mcc" size="5" placeholder="none"></label>
+  <button id="reset" title="Forget all intents, refunds and custom readers">Reset state</button>
+</header>
+<main>
+  <section>
+    <h2><span>Readers</span></h2>
+    <div class="scroll"><table><thead><tr><th>Serial</th><th>Label</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="readers"></tbody></table></div>
+    <form id="add-reader">
+      <input name="serial_number" placeholder="Serial number" required>
+      <input name="label" placeholder="Label">
+      <select name="device_type"><option>bbpos_wisepos_e</option><option>stripe_s700</option><option>bbpos_wisepad3</option><option>verifone_P400</option></select>
+      <button class="primary">Add reader</button>
+    </form>
+  </section>
+
+  <section>
+    <h2><span>Playground</span><span class="muted" id="conn">not connected</span></h2>
+    <p class="muted" style="margin-top:0">Runs the simulated JS SDK on this page. Use the reader panel (bottom right) to present cards and pick tips.</p>
+    <div class="row">
+      <select id="pg-reader"></select>
+      <button id="pg-discover">Discover</button>
+      <button id="pg-connect" class="primary">Connect</button>
+      <button id="pg-disconnect">Disconnect</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input id="pg-amount" type="number" value="12.50" step="0.01" min="0.01" style="width:100px">
+      <select id="pg-currency"><option>usd</option><option>eur</option><option>cad</option><option>aud</option><option>jpy</option></select>
+      <label><input id="pg-tip" type="checkbox"> tipping</label>
+      <label><input id="pg-manual" type="checkbox" checked> manual capture</label>
+      <button id="pg-pay" class="primary">Charge</button>
+      <button id="pg-cancel">Cancel collect</button>
+    </div>
+    <pre id="out" class="mono"></pre>
+  </section>
+
+  <section class="wide">
+    <h2><span>Payment intents</span></h2>
+    <div class="scroll"><table><thead><tr><th>Id</th><th>Authorized</th><th>Captured</th><th>Tip</th><th>Status</th><th>Card</th><th>Created</th><th></th></tr></thead><tbody id="intents"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2><span>Refunds</span></h2>
+    <div class="scroll"><table><thead><tr><th>Id</th><th>Amount</th><th>Charge</th><th>Status</th></tr></thead><tbody id="refunds"></tbody></table></div>
+  </section>
+
+  <section class="wide">
+    <h2><span>Request log</span></h2>
+    <div class="scroll"><table><thead><tr><th>Time</th><th>Request</th><th>Status</th></tr></thead><tbody id="log"></tbody></table></div>
+  </section>
+</main>
+
+<script src="terminal/v1/"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const ZERO = new Set(["jpy", "krw", "vnd", "clp"]);
+const money = (a, c) => new Intl.NumberFormat(undefined, { style: "currency", currency: c.toUpperCase() }).format(ZERO.has(c) ? a : a / 100);
+const cell = (text, cls) => { const td = document.createElement("td"); td.textContent = text ?? ""; if (cls) td.className = cls; return td; };
+const pill = (status) => { const td = document.createElement("td"); const s = document.createElement("span"); s.className = "pill s-" + status; s.textContent = status; td.append(s); return td; };
+const btn = (label, fn) => { const b = document.createElement("button"); b.textContent = label; b.onclick = fn; return b; };
+const post = (path, body, method = "POST") => fetch(path, { method, headers: { "Content-Type": "application/json" }, body: body && JSON.stringify(body) }).then((r) => r.json());
+const form = (path, params) => fetch(path, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(params) }).then((r) => r.json());
+const log = (label, data) => { $("#out").textContent = `${label}\n${JSON.stringify(data, null, 2)}\n\n` + $("#out").textContent; };
+
+const seen = {};
+const openLogs = new Set();
+const changed = (key, value) => { const json = JSON.stringify(value); if (seen[key] === json) return false; seen[key] = json; return true; };
+async function refresh() {
+  let st;
+  try { st = await (await fetch("sim/state")).json(); } catch { return; }
+  if (document.activeElement !== $("#mcc")) $("#mcc").value = st.mcc || "";
+  if (!changed("tables", [st.readers, st.payment_intents, st.refunds, st.log])) return;
+  $("#readers").replaceChildren(...st.readers.map((r) => {
+    const tr = document.createElement("tr");
+    const actions = cell("");
+    actions.append(
+      btn(r.status === "online" ? "Take offline" : "Bring online", () => post(`sim/readers/${r.id}`, { status: r.status === "online" ? "offline" : "online" }).then(refresh)),
+      " ", btn("Delete", () => post(`sim/readers/${r.id}`, null, "DELETE").then(refresh)));
+    tr.append(cell(r.serial_number, "mono"), cell(r.label), cell(r.device_type, "mono"), pill(r.connected ? "online" : r.status), actions);
+    if (r.connected) tr.children[3].firstChild.textContent = "connected";
+    return tr;
+  }));
+  $("#intents").replaceChildren(...st.payment_intents.map((pi) => {
+    const ch = pi.charges.data.at(-1);
+    const card = ch ? Object.values(ch.payment_method_details).find((d) => typeof d === "object") : null;
+    const tr = document.createElement("tr");
+    const actions = cell("");
+    if (pi.status === "requires_capture") actions.append(btn("Capture", () => form(`v1/payment_intents/${pi.id}/capture`, {}).then((r) => (log("capture", r), refresh()))));
+    if (pi.status === "succeeded") actions.append(btn("Refund", () => form("v1/refunds", { payment_intent: pi.id }).then((r) => (log("refund", r), refresh()))));
+    if (!["succeeded", "canceled"].includes(pi.status)) actions.append(" ", btn("Cancel", () => form(`v1/payment_intents/${pi.id}/cancel`, {}).then(refresh)));
+    tr.append(cell(pi.id, "mono"), cell(money(pi.amount, pi.currency)), cell(pi.amount_received ? money(pi.amount_received, pi.currency) + (pi.amount_received > pi.amount ? " (overcapture)" : "") : ""), cell(pi.amount_details.tip.amount ? money(pi.amount_details.tip.amount, pi.currency) + " (on reader)" : pi.amount_received > pi.amount ? money(pi.amount_received - pi.amount, pi.currency) + " (after payment)" : ""),
+      pill(pi.status), cell(card ? `${card.brand} ••${card.last4}${ch.failure_code ? " (" + ch.failure_code + ")" : ""}` : ""),
+      cell(new Date(pi.created * 1000).toLocaleTimeString()), actions);
+    return tr;
+  }));
+  $("#refunds").replaceChildren(...st.refunds.map((r) => {
+    const tr = document.createElement("tr");
+    tr.append(cell(r.id, "mono"), cell(money(r.amount, r.currency)), cell(r.charge, "mono"), pill(r.status));
+    return tr;
+  }));
+  $("#log").replaceChildren(...st.log.map((l) => {
+    const tr = document.createElement("tr");
+    const key = `${l.at}${l.path}`;
+    const details = document.createElement("details");
+    details.open = openLogs.has(key);
+    details.ontoggle = () => (details.open ? openLogs.add(key) : openLogs.delete(key));
+    const summary = document.createElement("summary");
+    summary.textContent = `${l.method} ${l.path}${l.error ? " — " + l.error : ""}`;
+    const pre = document.createElement("pre");
+    pre.textContent = `Request:\n${JSON.stringify(l.request ?? {}, null, 2)}\n\nResponse:\n${JSON.stringify(l.response ?? {}, null, 2)}`;
+    details.append(summary, pre);
+    const td = cell("", "mono");
+    td.append(details);
+    tr.append(cell(new Date(l.at * 1000).toLocaleTimeString()), td, cell(l.status, l.status >= 400 ? "s-failed" : ""));
+    return tr;
+  }));
+}
+
+$("#add-reader").onsubmit = async (e) => {
+  e.preventDefault();
+  const res = await post("sim/readers", Object.fromEntries(new FormData(e.target)));
+  if (res.error) alert(res.error.message); else e.target.reset();
+  refresh();
+};
+$("#mcc").onchange = () => post("sim/mcc", { mcc: $("#mcc").value.trim() });
+$("#reset").onclick = () => confirm("Reset all simulator state?") && post("sim/reset", {}).then(refresh);
+
+// --- playground: plays both the POS frontend and its backend ---------------
+let readers = [];
+const terminal = StripeTerminal.create({
+  onFetchConnectionToken: () => form("v1/terminal/connection_tokens", {}).then((r) => r.secret),
+  onUnexpectedReaderDisconnect: (e) => log("onUnexpectedReaderDisconnect", e),
+  onConnectionStatusChange: (e) => ($("#conn").textContent = e.status),
+});
+$("#pg-discover").onclick = async () => {
+  const [sim, real] = await Promise.all([terminal.discoverReaders({ simulated: true }), terminal.discoverReaders()]);
+  readers = [...(sim.discoveredReaders || []), ...(real.discoveredReaders || [])];
+  $("#pg-reader").replaceChildren(...readers.map((r, i) => new Option(`${r.label} (${r.serial_number})`, i)));
+  log("discoverReaders", readers.map((r) => r.serial_number));
+};
+$("#pg-connect").onclick = async () => {
+  if (!readers.length) await $("#pg-discover").onclick();
+  log("connectReader", await terminal.connectReader(readers[$("#pg-reader").value || 0], { fail_if_in_use: true }));
+};
+$("#pg-disconnect").onclick = async () => log("disconnectReader", await terminal.disconnectReader());
+$("#pg-cancel").onclick = async () => log("cancelCollectPaymentMethod", await terminal.cancelCollectPaymentMethod());
+$("#pg-pay").onclick = async () => {
+  const currency = $("#pg-currency").value;
+  const amount = Math.round(parseFloat($("#pg-amount").value) * (ZERO.has(currency) ? 1 : 100));
+  const pi = await form("v1/payment_intents", {
+    amount, currency, "payment_method_types[]": "card_present",
+    capture_method: $("#pg-manual").checked ? "manual" : "automatic",
+  });
+  if (pi.error) return log("create PaymentIntent", pi);
+  const collected = await terminal.collectPaymentMethod(pi.client_secret, {
+    config_override: { skip_tipping: !$("#pg-tip").checked, enable_customer_cancellation: true },
+  });
+  log("collectPaymentMethod", collected.error || { id: collected.paymentIntent.id, status: collected.paymentIntent.status });
+  if (collected.error) return refresh();
+  const processed = await terminal.processPayment(collected.paymentIntent);
+  log("processPayment", processed.error || { id: processed.paymentIntent.id, status: processed.paymentIntent.status, amount: processed.paymentIntent.amount });
+  refresh();
+};
+
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

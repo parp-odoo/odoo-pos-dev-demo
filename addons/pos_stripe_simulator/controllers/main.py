@@ -10,7 +10,7 @@ SDK_ROUTES = [
     ('GET', r'terminal/v1/?'),
     ('GET', r'sim/state'),
     ('POST', r'sim/discover'),
-    ('POST', r'sim/readers/[\w-]+/(connect|disconnect|heartbeat)'),
+    ('POST', r'sim/readers/[\w-]+/(connect|disconnect)'),
     ('GET', r'v1/payment_intents/[\w-]+'),
     ('POST', r'sim/payment_intents/[\w-]+/(collect|confirm)'),
     ('POST', r'sim/charges/[\w-]+/refund'),
