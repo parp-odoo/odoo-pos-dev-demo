@@ -30,6 +30,7 @@ browser split view, install the bundled
 | `pos_up_extra_demo` | US UrbanPiper stores/providers, optional webhook URL and a quick-order debug button. |
 | `pos_up_in_extra_demo` | UrbanPiper credentials/providers for the Indian restaurant. |
 | `pos_hr_extra_demo` | Employee login on the main company's demo configurations, with employees named after each supported role. |
+| `pos_dpopay_simulator` | Sends DPO Pay terminal traffic to `simulators/dpo-terminal` (development only); demo databases get a **DPO Simulator** payment method. |
 | `l10n_de_pos_cert_demo` | German furniture shop and restaurant, Fiskaly registration via local IAP, preparation display and printers. |
 
 UrbanPiper setup is skipped when the store identifier or credentials are missing.

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="pos.payment.method" name="_create_dpopay_simulator_demo_method"/>
+</odoo>

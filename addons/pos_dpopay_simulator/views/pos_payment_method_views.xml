@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pos_payment_method_view_form_inherit_pos_dpopay_simulator" model="ir.ui.view">
+        <field name="name">pos.payment.method.form.inherit.pos.dpopay.simulator</field>
+        <field name="model">pos.payment.method</field>
+        <field name="inherit_id" ref="pos_dpopay.pos_payment_method_view_form_inherit_pos_dpopay"/>
+        <field name="arch" type="xml">
+            <page name="settings" position="inside">
+                <div class="alert alert-info d-flex align-items-center justify-content-between" role="alert">
+                    <span>Requests go to the DPO Pay simulator (system parameter <code>pos_dpopay_simulator.url</code>).</span>
+                    <button name="action_open_dpopay_simulator" type="object" string="Open Simulator" class="btn btn-secondary btn-sm"/>
+                </div>
+            </page>
+        </field>
+    </record>
+</odoo>

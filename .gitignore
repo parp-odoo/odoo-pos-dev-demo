@@ -42,4 +42,4 @@ package.json
 
 odoo_query_shell/
 
-simulators/stripe-simulator/state.json
+simulators/**/*.json

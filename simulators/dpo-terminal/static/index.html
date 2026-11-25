@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DPO Pay Simulator</title>
+<style>
+    :root {
+        --bg: #f4f5f7; --panel: #fff; --text: #1f2328; --muted: #6a737d; --border: #d8dce1;
+        --accent: #0b6bcb; --ok: #1a7f37; --warn: #9a6700; --bad: #cf222e; --screen: #0f2a1d; --screen-text: #7CFC9a;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --muted: #8b949e; --border: #30363d;
+            --accent: #4493f8; --ok: #3fb950; --warn: #d29922; --bad: #f85149; --screen: #04140b;
+        }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+    header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 18px; margin: 0; }
+    main { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 16px; padding: 16px; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    section { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px; min-width: 0; }
+    h2 { font-size: 15px; margin: 0 0 10px; }
+    button { font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); padding: 6px 10px; }
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+    button.bad { background: var(--bad); border-color: var(--bad); color: #fff; }
+    button.small { padding: 2px 8px; font-size: 12px; }
+    input[type=number], input[type=text] { font: inherit; width: 80px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
+    input[type=text] { width: 130px; }
+    label { display: flex; align-items: center; gap: 6px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .muted { color: var(--muted); }
+    .terminal { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .terminal.offline { opacity: .6; }
+    .screen { background: var(--screen); color: var(--screen-text); font-family: ui-monospace, monospace; border-radius: 8px; padding: 14px; margin: 10px 0; min-height: 92px; text-align: center; }
+    .screen .amount { font-size: 26px; font-weight: 700; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .table-wrap { overflow-x: auto; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; }
+    .s-pending { color: var(--accent); } .s-approved { color: var(--ok); } .s-declined, .s-failed { color: var(--bad); } .s-cancelled { color: var(--warn); }
+    .http-ok { color: var(--ok); } .http-err { color: var(--bad); }
+    details pre { white-space: pre-wrap; word-break: break-all; max-height: 260px; overflow: auto; background: var(--bg); padding: 6px; border-radius: 6px; margin: 4px 0; }
+    .scenarios { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; }
+    code { font-family: ui-monospace, monospace; font-size: 12px; }
+    #error { color: var(--bad); }
+</style>
+</head>
+<body>
+<header>
+    <h1>DPO Pay Simulator</h1>
+    <div class="row">
+        <label title="Outcome chosen by the amount's last two digits"><input type="checkbox" id="auto_mode"> Auto mode</label>
+        <label>Polls before outcome <input type="number" id="polls_to_complete" min="1" max="50"></label>
+        <button id="reset" class="bad">Reset state</button>
+        <span id="error"></span>
+    </div>
+</header>
+<main>
+    <div>
+        <section>
+            <h2>Terminals</h2>
+            <div id="terminals"><p class="muted">A terminal appears when Odoo first calls it (its TID and MID come from the payment method), or add one:</p></div>
+            <div class="row">
+                <input type="text" id="new_tid" placeholder="TID">
+                <input type="text" id="new_mid" placeholder="MID">
+                <button id="add_terminal">Add terminal</button>
+            </div>
+        </section>
+        <section>
+            <h2>Failure scenarios</h2>
+            <div class="scenarios" id="scenarios"></div>
+        </section>
+        <section>
+            <h2>Auto mode amounts</h2>
+            <table id="magic"></table>
+        </section>
+    </div>
+    <div>
+        <section>
+            <h2>Transactions</h2>
+            <div class="table-wrap"><table id="transactions"></table></div>
+        </section>
+        <section>
+            <h2>Request log</h2>
+            <div class="table-wrap"><table id="log"></table></div>
+        </section>
+    </div>
+</main>
+<script>
+"use strict";
+const SCENARIOS = [
+    ["token_expired_next", "number", "Expired token (401 999912) on next N calls"],
+    ["invalid_chain_id", "checkbox", "Invalid Chain-ID (403 999911)"],
+    ["http_500_next", "number", "HTTP 500 on next N calls"],
+    ["drop_connection_next", "number", "Drop connection on next N calls"],
+    ["result_fails_next", "number", "get-result fails on next N calls"],
+    ["cancel_refused", "checkbox", "Refuse cancel-transaction"],
+    ["slow_ms", "number", "Delay every response (ms)"],
+];
+const $ = (id) => document.getElementById(id);
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const money = (minor) => (Number(minor || 0) / 100).toFixed(2);
+let lastState = null;
+
+async function call(path, body) {
+    const response = await fetch(path, {
+        method: body === undefined ? "GET" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.errorMessage || response.statusText);
+    }
+    return data;
+}
+
+async function act(path, body = {}) {
+    try {
+        await call(path, body);
+        $("error").textContent = "";
+    } catch (error) {
+        $("error").textContent = error.message;
+    }
+    refresh();
+}
+
+function buildScenarioInputs() {
+    $("scenarios").innerHTML = SCENARIOS.map(([key, type, label]) =>
+        `<label for="sc_${key}">${esc(label)}</label>` +
+        `<input id="sc_${key}" type="${type}" ${type === "number" ? 'min="0"' : ""}>`
+    ).join("");
+    for (const [key, type] of SCENARIOS) {
+        $(`sc_${key}`).addEventListener("change", (ev) =>
+            act("sim/scenarios", { [key]: type === "checkbox" ? ev.target.checked : Number(ev.target.value) })
+        );
+    }
+}
+
+function setInput(input, value) {
+    if (document.activeElement === input) {
+        return;
+    }
+    if (input.type === "checkbox") {
+        input.checked = Boolean(value);
+    } else {
+        input.value = value;
+    }
+}
+
+function renderTerminals(state) {
+    const terminals = Object.values(state.terminals);
+    if (!terminals.length) {
+        return;
+    }
+    const byId = Object.fromEntries(state.transactions.map((t) => [t.sourceId, t]));
+    $("terminals").innerHTML = terminals.map((terminal) => {
+        const txn = byId[terminal.current];
+        const pending = txn && txn.status === "pending";
+        const screen = !terminal.online
+            ? `<div>OFFLINE</div>`
+            : pending
+            ? `<div class="amount">${money(txn.amount)}</div><div>${terminal.card_inserted ? "PROCESSING CARD…" : txn.type === "pushPaymentDpoMomoSale" ? "WAITING FOR MOBILE MONEY" : "PRESENT CARD"}</div><div><code>${esc(txn.sourceId)}</code> · poll ${txn.polls}${txn.auto ? ` · auto: ${esc(txn.auto)}` : ""}</div>`
+            : `<div>NO TXN / SYSTEM IDLE</div>`;
+        const outcomes = pending
+            ? `<div class="actions">${Object.entries(state.outcomes).map(([key, label]) =>
+                `<button class="${key.startsWith("approve") ? "ok" : key === "cancel_terminal" ? "" : "bad"}" data-txn="${esc(txn.sourceId)}" data-outcome="${key}">${esc(label)}</button>`).join("")}</div>`
+            : "";
+        return `<div class="terminal ${terminal.online ? "" : "offline"}">
+            <div class="row" style="justify-content: space-between">
+                <strong>TID ${esc(terminal.tid)}</strong><span class="muted">MID ${esc(terminal.mid)}</span>
+            </div>
+            <div class="screen">${screen}</div>
+            ${outcomes}
+            <div class="row" style="margin-top: 8px">
+                <label><input type="checkbox" data-tid="${esc(terminal.tid)}" data-key="online" ${terminal.online ? "checked" : ""}> Online</label>
+                <label title="While the card is in, the POS can't cancel"><input type="checkbox" data-tid="${esc(terminal.tid)}" data-key="card_inserted" ${terminal.card_inserted ? "checked" : ""}> Card inserted</label>
+                <button class="small" data-delete="${esc(terminal.tid)}">Remove</button>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function renderTransactions(state) {
+    const rows = state.transactions.map((txn) => `<tr>
+        <td><code>${esc(txn.sourceId)}</code><div class="muted">${esc(txn.created.replace("T", " "))}</div></td>
+        <td>${esc(txn.tid)}</td>
+        <td>${money(txn.amount)} <span class="muted">${esc(txn.currency)}</span></td>
+        <td>${txn.type === "pushPaymentDpoMomoSale" ? "Mobile Money" : "Card"}</td>
+        <td><span class="badge s-${esc(txn.status)}">${esc(txn.status)}</span>${txn.outcome ? `<div class="muted">${esc(state.outcomes[txn.outcome] || txn.outcome)}</div>` : ""}</td>
+        <td><details><summary>${txn.history.length} events</summary><pre>${esc(txn.history.map((h) => h.join("  ")).join("\n"))}</pre></details></td>
+    </tr>`);
+    $("transactions").innerHTML = `<tr><th>Source ID</th><th>TID</th><th>Amount</th><th>Type</th><th>Status</th><th>History</th></tr>` +
+        (rows.join("") || `<tr><td colspan="6" class="muted">No transactions yet.</td></tr>`);
+}
+
+function renderLog(state) {
+    const openKeys = new Set([...document.querySelectorAll("#log details[open]")].map((d) => d.dataset.key));
+    const rows = state.log.slice(0, 60).map((entry) => {
+        const key = entry.time + entry.path + entry.ms;
+        const cls = entry.status >= 200 && entry.status < 300 ? "http-ok" : "http-err";
+        return `<tr>
+            <td class="muted">${esc(entry.time.slice(11))}</td>
+            <td>${esc(entry.endpoint)}${entry.tid ? ` <span class="muted">${esc(entry.tid)}</span>` : ""}</td>
+            <td class="${cls}">${entry.status || "dropped"}</td>
+            <td class="muted">${entry.ms} ms</td>
+            <td><details data-key="${esc(key)}" ${openKeys.has(key) ? "open" : ""}><summary><code>${esc(entry.request?.sourceId || "")}</code></summary>
+                <pre>→ ${esc(JSON.stringify(entry.request, null, 1))}</pre><pre>← ${esc(JSON.stringify(entry.response, null, 1))}</pre></details></td>
+        </tr>`;
+    });
+    $("log").innerHTML = `<tr><th>Time</th><th>Endpoint</th><th>HTTP</th><th>Took</th><th>Payload</th></tr>` +
+        (rows.join("") || `<tr><td colspan="5" class="muted">No requests yet.</td></tr>`);
+}
+
+function render(state) {
+    setInput($("auto_mode"), state.settings.auto_mode);
+    setInput($("polls_to_complete"), state.settings.polls_to_complete);
+    for (const [key] of SCENARIOS) {
+        setInput($(`sc_${key}`), state.scenarios[key]);
+    }
+    $("magic").innerHTML = `<tr><th>Cents</th><th>Outcome</th></tr>` + Object.entries(state.magic_cents)
+        .map(([cents, label]) => `<tr><td><code>x.${cents}</code></td><td>${esc(label)}</td></tr>`).join("");
+    renderTerminals(state);
+    renderTransactions(state);
+    renderLog(state);
+}
+
+async function refresh() {
+    try {
+        const state = await call("sim/state");
+        const serialized = JSON.stringify(state);
+        if (serialized !== lastState) {
+            lastState = serialized;
+            render(state);
+        }
+    } catch (error) {
+        $("error").textContent = `Simulator unreachable: ${error.message}`;
+    }
+}
+
+document.addEventListener("click", (ev) => {
+    const button = ev.target.closest("button");
+    if (!button) {
+        return;
+    }
+    if (button.dataset.outcome) {
+        act(`sim/transactions/${encodeURIComponent(button.dataset.txn)}/${button.dataset.outcome}`);
+    } else if (button.dataset.delete) {
+        act(`sim/terminals/${encodeURIComponent(button.dataset.delete)}/delete`);
+    }
+});
+document.addEventListener("change", (ev) => {
+    const input = ev.target;
+    if (input.dataset.tid) {
+        act(`sim/terminals/${encodeURIComponent(input.dataset.tid)}`, { [input.dataset.key]: input.checked });
+    }
+});
+$("auto_mode").addEventListener("change", (ev) => act("sim/settings", { auto_mode: ev.target.checked }));
+$("polls_to_complete").addEventListener("change", (ev) => act("sim/settings", { polls_to_complete: Number(ev.target.value) }));
+$("reset").addEventListener("click", () => confirm("Clear transactions, terminals, tokens and the log?") && act("sim/reset"));
+$("add_terminal").addEventListener("click", () => {
+    const tid = $("new_tid").value.trim();
+    if (tid) {
+        act(`sim/terminals/${encodeURIComponent(tid)}`, { mid: $("new_mid").value.trim() });
+    }
+});
+
+buildScenarioInputs();
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
